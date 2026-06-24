@@ -1,4 +1,5 @@
 import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export function CTASection() {
@@ -35,11 +36,14 @@ export function CTASection() {
           {/* Single Primary CTA */}
           <div className="mt-10">
             <Button
+              asChild
               size="lg"
               className="group h-14 rounded-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-10 text-base font-semibold text-white shadow-xl shadow-slate-900/25 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-900/30 hover:scale-[1.02] active:scale-[0.98]"
             >
-              Start Investing Now
-              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              <Link href="/properties">
+                Start Investing Now
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
           </div>
         </div>

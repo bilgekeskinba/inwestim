@@ -10,6 +10,8 @@ export default function Home() {
       <Hero />
       <PropertyOpportunities />
       <HowItWorks />
+      <div id="about" className="h-px w-full" aria-hidden="true" />
+      <div id="contact" className="h-px w-full" aria-hidden="true" />
       <CTASection />
       <Footer />
     </main>

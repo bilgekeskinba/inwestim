@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignInForm } from "@/components/auth/sign-in-form";
 
@@ -21,7 +22,9 @@ export default function SignInPage() {
       }
       subtitle="Access your portfolio and continue building long-term wealth."
     >
-      <SignInForm />
+      <Suspense fallback={<div className="h-20" />}>
+        <SignInForm />
+      </Suspense>
     </AuthShell>
   );
 }

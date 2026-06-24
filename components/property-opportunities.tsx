@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PropertyCard } from "@/components/property-card";
 import { properties } from "@/data/properties";
@@ -63,11 +64,14 @@ export function PropertyOpportunities() {
           </div>
 
           <Button
+            asChild
             variant="outline"
             className="group w-fit shrink-0 rounded-full border-2 border-foreground/15 bg-white px-7 py-6 text-base font-semibold shadow-sm transition-all hover:border-foreground hover:bg-foreground hover:text-background hover:shadow-lg"
           >
-            View All Properties
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <Link href="/properties">
+              View All Properties
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
           </Button>
         </div>
 

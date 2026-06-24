@@ -45,31 +45,31 @@ const footerLinks = {
   invest: {
     title: "Invest",
     links: [
-      { label: "About Us", href: "/about-us" },
+      { label: "About Us", href: "#" },
       { label: "Properties", href: "/properties" },
-      { label: "Exchange", href: "/exchange" },
-      { label: "Press Kit", href: "/press-kit" },
-      { label: "Listing Application", href: "/listing-application" },
-      { label: "Business Partnership", href: "/business-partnership" },
+      { label: "Exchange", href: "#" },
+      { label: "Press Kit", href: "#" },
+      { label: "Listing Application", href: "#" },
+      { label: "Business Partnership", href: "#" },
     ],
   },
   legal: {
     title: "Legal",
     links: [
-      { label: "Key Risks", href: "/key-risks" },
-      { label: "Property Documents", href: "/property-documents" },
-      { label: "Terms of Use", href: "/terms-of-use" },
-      { label: "Privacy Policy", href: "/privacy-policy" },
-      { label: "Cookies", href: "/cookies" },
+      { label: "Key Risks", href: "#" },
+      { label: "Property Documents", href: "#" },
+      { label: "Terms of Use", href: "#" },
+      { label: "Privacy Policy", href: "#" },
+      { label: "Cookies", href: "#" },
     ],
   },
   help: {
     title: "Help",
     links: [
-      { label: "Info Center", href: "/info-center" },
-      { label: "F.A.Q.", href: "/faq" },
-      { label: "Support", href: "/support" },
-      { label: "How it works?", href: "/how-it-works" },
+      { label: "Info Center", href: "#" },
+      { label: "F.A.Q.", href: "#" },
+      { label: "Support", href: "#" },
+      { label: "How it works?", href: "/#how-it-works" },
     ],
   },
 };
@@ -200,8 +200,8 @@ export function Footer() {
                 {footerLinks.invest.title}
               </h3>
               <ul className="mt-6 space-y-4">
-                {footerLinks.invest.links.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.invest.links.map((link, index) => (
+                  <li key={`invest-${link.label}-${index}`}>
                     <Link
                       href={link.href}
                       className="group/link inline-flex items-center gap-1 text-[15px] text-slate-500 transition-all duration-200 hover:text-slate-900"
@@ -222,8 +222,8 @@ export function Footer() {
                 {footerLinks.legal.title}
               </h3>
               <ul className="mt-6 space-y-4">
-                {footerLinks.legal.links.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.legal.links.map((link, index) => (
+                  <li key={`legal-${link.label}-${index}`}>
                     <Link
                       href={link.href}
                       className="group/link inline-flex items-center gap-1 text-[15px] text-slate-500 transition-all duration-200 hover:text-slate-900"
@@ -244,8 +244,8 @@ export function Footer() {
                 {footerLinks.help.title}
               </h3>
               <ul className="mt-6 space-y-4">
-                {footerLinks.help.links.map((link) => (
-                  <li key={link.href}>
+                {footerLinks.help.links.map((link, index) => (
+                  <li key={`help-${link.label}-${index}`}>
                     <Link
                       href={link.href}
                       className="group/link inline-flex items-center gap-1 text-[15px] text-slate-500 transition-all duration-200 hover:text-slate-900"

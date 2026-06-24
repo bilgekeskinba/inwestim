@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,34 @@ const interests = [
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [formError, setFormError] = useState("");
+  const router = useRouter();
+  const STORAGE_KEY = "verifyEmail";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Connect to authentication backend
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name")?.toString().trim() ?? "";
+    const email = formData.get("email")?.toString().trim() ?? "";
+    const password = formData.get("password")?.toString() ?? "";
+    const confirm = formData.get("confirm")?.toString() ?? "";
+
+    if (!name || !email || !password || !confirm) {
+      setFormError("Please fill in all required fields.");
+      return;
+    }
+
+    if (password !== confirm) {
+      setFormError("Passwords do not match.");
+      return;
+    }
+
+    setFormError("");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(STORAGE_KEY, email);
+    }
+
+    router.push("/verify-email");
   };
 
   return (
@@ -34,6 +59,7 @@ export function RegisterForm() {
           </div>
           <input
             id="name"
+            name="name"
             type="text"
             required
             placeholder="Jane Doe"
@@ -53,6 +79,7 @@ export function RegisterForm() {
           </div>
           <input
             id="email"
+            name="email"
             type="email"
             required
             placeholder="you@example.com"
@@ -76,6 +103,7 @@ export function RegisterForm() {
             </div>
             <input
               id="password"
+              name="password"
               type={showPassword ? "text" : "password"}
               required
               placeholder="Create password"
@@ -109,6 +137,7 @@ export function RegisterForm() {
             </div>
             <input
               id="confirm"
+              name="confirm"
               type={showConfirm ? "text" : "password"}
               required
               placeholder="Repeat password"
@@ -141,6 +170,7 @@ export function RegisterForm() {
         </label>
         <select
           id="interest"
+          name="interest"
           defaultValue=""
           className="w-full rounded-2xl border-2 border-slate-200/80 bg-white px-4 py-3.5 text-[15px] text-slate-900 shadow-sm transition-all duration-300 hover:border-slate-300 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10"
         >
@@ -156,6 +186,9 @@ export function RegisterForm() {
       </div>
 
       {/* Submit */}
+      {formError ? (
+        <p className="text-sm font-medium text-red-500">{formError}</p>
+      ) : null}
       <Button
         type="submit"
         size="lg"

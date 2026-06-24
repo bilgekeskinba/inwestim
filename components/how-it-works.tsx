@@ -78,7 +78,7 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="relative scroll-mt-20 overflow-hidden bg-gradient-to-b from-white via-slate-50/30 to-white py-24 md:py-32"
+      className="relative scroll-mt-24 overflow-hidden bg-gradient-to-b from-white via-slate-50/30 to-white py-24 md:py-32"
     >
       {/* Background elements */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.08),transparent)]" />
