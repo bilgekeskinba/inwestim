@@ -36,7 +36,7 @@ export default function VerifyEmailPage() {
                 Verify your email
               </h1>
               <p className="mt-3 leading-relaxed text-slate-500">
-                We sent a 6-digit code to your email.
+                We sent a verification link to your email. Click the link to verify your account, then return to sign in.
               </p>
 
               <div className="mt-8">

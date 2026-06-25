@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { signUpWithEmail } from "@/lib/supabase-auth";
 
 const interests = [
   "Residential",
@@ -17,16 +18,18 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const STORAGE_KEY = "verifyEmail";
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name")?.toString().trim() ?? "";
     const email = formData.get("email")?.toString().trim() ?? "";
     const password = formData.get("password")?.toString() ?? "";
     const confirm = formData.get("confirm")?.toString() ?? "";
+    const interest = formData.get("interest")?.toString().trim() ?? "";
 
     if (!name || !email || !password || !confirm) {
       setFormError("Please fill in all required fields.");
@@ -39,6 +42,19 @@ export function RegisterForm() {
     }
 
     setFormError("");
+    setIsSubmitting(true);
+
+    const { error } = await signUpWithEmail(email, password, {
+      full_name: name,
+      interest: interest || undefined,
+    });
+
+    if (error) {
+      setFormError(error.message);
+      setIsSubmitting(false);
+      return;
+    }
+
     if (typeof window !== "undefined") {
       sessionStorage.setItem(STORAGE_KEY, email);
     }
@@ -192,7 +208,8 @@ export function RegisterForm() {
       <Button
         type="submit"
         size="lg"
-        className="group h-14 w-full rounded-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-base font-semibold text-white shadow-xl shadow-slate-900/25 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-slate-900/30 active:scale-[0.99]"
+        disabled={isSubmitting}
+        className="group h-14 w-full rounded-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-base font-semibold text-white shadow-xl shadow-slate-900/25 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-slate-900/30 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
       >
         Create account
         <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />

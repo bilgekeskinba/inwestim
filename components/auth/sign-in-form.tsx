@@ -1,19 +1,43 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { signInWithPassword } from "@/lib/supabase-auth";
 
 export function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const searchParams = useSearchParams();
   const verified = searchParams.get("verified") === "true";
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Connect to authentication backend
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email")?.toString().trim() ?? "";
+    const password = formData.get("password")?.toString() ?? "";
+
+    if (!email || !password) {
+      setFormError("Please enter your email and password.");
+      return;
+    }
+
+    setFormError("");
+    setIsSubmitting(true);
+
+    const { error } = await signInWithPassword(email, password);
+
+    if (error) {
+      setFormError(error.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    router.push("/dashboard");
   };
 
   return (
@@ -38,6 +62,7 @@ export function SignInForm() {
           </div>
           <input
             id="email"
+            name="email"
             type="email"
             required
             placeholder="you@example.com"
@@ -68,6 +93,7 @@ export function SignInForm() {
           </div>
           <input
             id="password"
+            name="password"
             type={showPassword ? "text" : "password"}
             required
             placeholder="Enter your password"
@@ -89,10 +115,14 @@ export function SignInForm() {
       </div>
 
       {/* Submit */}
+      {formError ? (
+        <p className="text-sm font-medium text-red-500">{formError}</p>
+      ) : null}
       <Button
         type="submit"
         size="lg"
-        className="group h-14 w-full rounded-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-base font-semibold text-white shadow-xl shadow-slate-900/25 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-slate-900/30 active:scale-[0.99]"
+        disabled={isSubmitting}
+        className="group h-14 w-full rounded-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-base font-semibold text-white shadow-xl shadow-slate-900/25 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-slate-900/30 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-60"
       >
         Sign In
         <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />

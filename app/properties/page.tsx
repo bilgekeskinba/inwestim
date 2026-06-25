@@ -1,8 +1,11 @@
 import { Header } from "@/components/header";
 import { PropertyOpportunities } from "@/components/property-opportunities";
 import { Footer } from "@/components/footer";
+import { getLiveProperties } from "@/lib/properties";
 
-export default function PropertiesPage() {
+export default async function PropertiesPage() {
+  const properties = await getLiveProperties();
+
   return (
     <main>
       <section className="relative overflow-hidden bg-slate-950">
@@ -22,7 +25,10 @@ export default function PropertiesPage() {
           </div>
         </div>
       </section>
-      <PropertyOpportunities />
+      <div className="mx-auto max-w-7xl px-6 py-6 text-center text-sm text-emerald-300 md:px-12 lg:px-20">
+        Loaded {properties.length} properties from Supabase
+      </div>
+      <PropertyOpportunities properties={properties} />
       <Footer />
     </main>
   );

@@ -3,12 +3,15 @@ import { PropertyOpportunities } from "@/components/property-opportunities";
 import { HowItWorks } from "@/components/how-it-works";
 import { CTASection } from "@/components/cta-section";
 import { Footer } from "@/components/footer";
+import { getLiveProperties } from "@/lib/properties";
 
-export default function Home() {
+export default async function Home() {
+  const properties = await getLiveProperties();
+
   return (
     <main>
       <Hero />
-      <PropertyOpportunities />
+      <PropertyOpportunities properties={properties} displayLimit={3} />
       <HowItWorks />
       <div id="about" className="h-px w-full" aria-hidden="true" />
       <div id="contact" className="h-px w-full" aria-hidden="true" />

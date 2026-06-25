@@ -5,13 +5,16 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PropertyCard } from "@/components/property-card";
-import { properties } from "@/data/properties";
-import { PropertyStatus } from "@/types/property";
+import { Property, PropertyStatus } from "@/types/property";
+
+interface PropertyOpportunitiesProps {
+  properties?: Property[];
+  displayLimit?: number;
+}
 
 /**
  * Property Opportunities Section
- * Displays filterable property investment opportunities
- * TODO: Properties data will be fetched from admin panel / CMS / database in production
+ * Displays filterable property investment opportunities fetched from Supabase.
  */
 
 type FilterTab = "all" | PropertyStatus;
@@ -23,15 +26,18 @@ const filterTabs: { id: FilterTab; label: string }[] = [
   { id: "exited", label: "Exited" },
 ];
 
-export function PropertyOpportunities() {
+export function PropertyOpportunities({ properties, displayLimit }: PropertyOpportunitiesProps) {
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const propertyList = properties ?? [];
 
-  // Filter properties based on active tab
-  // TODO: This filtering will be done server-side when data comes from database
   const filteredProperties =
     activeFilter === "all"
-      ? properties
-      : properties.filter((property) => property.status === activeFilter);
+      ? propertyList
+      : propertyList.filter((property) => property.status === activeFilter);
+
+  const displayedProperties = typeof displayLimit === "number"
+    ? filteredProperties.slice(0, displayLimit)
+    : filteredProperties;
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-slate-50/50 via-white to-white py-24 md:py-32">
@@ -80,8 +86,8 @@ export function PropertyOpportunities() {
           {filterTabs.map((tab) => {
             const count =
               tab.id === "all"
-                ? properties.length
-                : properties.filter((p) => p.status === tab.id).length;
+                ? propertyList.length
+                : propertyList.filter((p) => p.status === tab.id).length;
             const isActive = activeFilter === tab.id;
 
             return (
@@ -113,13 +119,13 @@ export function PropertyOpportunities() {
 
         {/* Property Cards Grid */}
         <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProperties.map((property) => (
+          {displayedProperties.map((property) => (
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>
 
         {/* Empty State */}
-        {filteredProperties.length === 0 && (
+        {displayedProperties.length === 0 && (
           <div className="mt-12 flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-border bg-gradient-to-br from-slate-50 to-white py-20 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
               <Sparkles className="h-8 w-8 text-muted-foreground" />

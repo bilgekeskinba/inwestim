@@ -1,7 +1,36 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function Header() {
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+
+    const fetchSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setEmail(session?.user?.email ?? null);
+    };
+
+    fetchSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEmail(session?.user?.email ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const initial = email ? email.charAt(0).toUpperCase() : "";
+
   return (
     <nav className="relative z-20 flex items-center justify-between px-6 py-6 md:px-12 lg:px-20">
       <div className="flex items-center gap-2">
@@ -41,19 +70,32 @@ export function Header() {
       </div>
 
       <div className="hidden items-center gap-4 md:flex">
-        <Button
-          asChild
-          variant="ghost"
-          className="text-white/90 hover:bg-white/10 hover:text-white"
-        >
-          <Link href="/sign-in">Sign In</Link>
-        </Button>
-        <Button
-          asChild
-          className="rounded-full bg-white px-6 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 transition-all hover:bg-white/90 hover:shadow-xl"
-        >
-          <Link href="/register">Get Started</Link>
-        </Button>
+        {email ? (
+          <Link
+            href="/dashboard"
+            title="Go to dashboard"
+            aria-label="Go to dashboard"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white shadow-sm shadow-black/20 transition-colors hover:bg-white/20"
+          >
+            {initial}
+          </Link>
+        ) : (
+          <>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-white/90 hover:bg-white/10 hover:text-white"
+            >
+              <Link href="/sign-in">Sign In</Link>
+            </Button>
+            <Button
+              asChild
+              className="rounded-full bg-white px-6 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 transition-all hover:bg-white/90 hover:shadow-xl"
+            >
+              <Link href="/register">Get Started</Link>
+            </Button>
+          </>
+        )}
       </div>
 
       <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm md:hidden">
