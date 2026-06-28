@@ -4,22 +4,14 @@ import { cookies } from "next/headers";
 export async function createSupabaseServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseKey = supabaseServiceRoleKey ?? supabaseAnonKey;
 
-  if (!supabaseUrl || !supabaseKey) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Supabase environment variables are required.");
   }
 
   const cookieStore = await cookies();
 
-  if (supabaseServiceRoleKey) {
-    console.log("[supabase-server] using SUPABASE_SERVICE_ROLE_KEY for server client");
-  } else {
-    console.log("[supabase-server] using anon publishable key for server client");
-  }
-
-  return createServerClient(supabaseUrl, supabaseKey, {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

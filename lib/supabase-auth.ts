@@ -11,7 +11,14 @@ export async function signUpWithEmail(
   metadata?: SignUpMetadata
 ) {
   const supabase = getSupabaseBrowserClient();
-  return supabase.auth.signUp({ email, password }, { data: metadata });
+
+  // Profile creation is deferred to first dashboard access (ensureProfileExists).
+  // Here we only register the user and stash full_name/interest in user metadata.
+  return supabase.auth.signUp({
+    email,
+    password,
+    options: { data: metadata },
+  });
 }
 
 export async function signInWithPassword(email: string, password: string) {

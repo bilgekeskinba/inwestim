@@ -9,22 +9,94 @@ export const metadata: Metadata = {
   description: "Your investment dashboard for Inwestim.",
 };
 
-async function getUserEmail() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
+type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+type AuthUser = { id: string; email: string | null; full_name: string | null };
 
-  if (error || !session?.user?.email) {
+function devError(scope: string, error: unknown) {
+  // Keep production logs clean; only surface details while developing.
+  if (process.env.NODE_ENV !== "production") {
+    console.error(`[dashboard] ${scope}`, error);
+  }
+}
+
+// Reads the user's profile on first dashboard access, creating it if absent.
+// Returns the profile full_name, or null when none is available. Never throws:
+// on any failure we degrade to the email-based fallback in the caller.
+async function ensureProfileExists(
+  supabase: SupabaseServerClient,
+  user: AuthUser
+): Promise<string | null> {
+  try {
+    const { data: existing, error: readError } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (readError) {
+      devError("profile read failed", readError);
+      return null;
+    }
+
+    if (existing) {
+      return existing.full_name?.trim() || null;
+    }
+
+    // No profile yet — create one for this authenticated user.
+    const fullName = user.full_name?.trim() || "";
+
+    const { data: created, error: insertError } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        email: user.email ?? "",
+        full_name: fullName,
+        role: "user",
+      })
+      .select("full_name")
+      .maybeSingle();
+
+    if (insertError) {
+      // Ignore duplicate races (23505); the row exists, just keep going.
+      if (insertError.code !== "23505") {
+        devError("profile creation failed", insertError);
+      }
+      return fullName || null;
+    }
+
+    return created?.full_name?.trim() || null;
+  } catch (error) {
+    devError("profile lookup error", error);
     return null;
   }
+}
 
-  return session.user.email;
+async function getDashboardUser() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user?.id) {
+    return { email: null, displayName: null };
+  }
+
+  const email = user.email ?? null;
+
+  const fullName = await ensureProfileExists(supabase, {
+    id: user.id,
+    email,
+    full_name: (user.user_metadata?.full_name as string | undefined) ?? null,
+  });
+
+  const displayName = fullName || email || "investor";
+
+  return { email, displayName };
 }
 
 export default async function DashboardPage() {
-  const email = await getUserEmail();
+  const { email, displayName } = await getDashboardUser();
 
   if (!email) {
     redirect("/sign-in");
@@ -38,7 +110,7 @@ export default async function DashboardPage() {
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-emerald-400/80">Welcome back</p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Hello, investor.
+                Hello, {displayName}.
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-300">
                 Your Inwestim dashboard is ready. Monitor your portfolio, review opportunities, and manage your account from one place.
