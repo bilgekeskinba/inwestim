@@ -158,8 +158,68 @@ async function getDashboardMetrics(
   }
 }
 
-function formatTL(value: number): string {
-  return `${value.toLocaleString("tr-TR")} TL`;
+function formatUSDC(value: number): string {
+  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
+}
+
+function formatDate(value: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+}
+
+type PendingInvestment = {
+  id: string;
+  amount: number;
+  status: string;
+  created_at: string | null;
+  propertyTitle: string;
+};
+
+// Lists the user's pending investment requests, enriched with property titles.
+// Soft-fails to an empty array so a query error never crashes the dashboard.
+async function getPendingInvestments(
+  supabase: SupabaseServerClient,
+  userId: string
+): Promise<PendingInvestment[]> {
+  try {
+    const { data, error } = await supabase
+      .from("investments")
+      .select("id, amount, status, created_at, property_id")
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      devError("pending investments list failed", error);
+      return [];
+    }
+
+    const propertyIds = [
+      ...new Set(data.map((row) => row.property_id).filter(Boolean)),
+    ];
+    const titles = new Map<string, string>();
+
+    if (propertyIds.length > 0) {
+      const { data: props } = await supabase
+        .from("properties")
+        .select("id, title")
+        .in("id", propertyIds);
+      props?.forEach((p) => titles.set(String(p.id), String(p.title)));
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      amount: Number(row.amount) || 0,
+      status: String(row.status),
+      created_at: (row.created_at as string | null) ?? null,
+      propertyTitle: titles.get(String(row.property_id)) ?? "Property",
+    }));
+  } catch (error) {
+    devError("pending investments error", error);
+    return [];
+  }
 }
 
 export default async function DashboardPage() {
@@ -170,6 +230,7 @@ export default async function DashboardPage() {
   }
 
   const metrics = await getDashboardMetrics(supabase, userId);
+  const pendingInvestments = await getPendingInvestments(supabase, userId);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -210,7 +271,7 @@ export default async function DashboardPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Portfolio Value</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{formatTL(metrics.portfolioValue)}</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{formatUSDC(metrics.portfolioValue)}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Active Investments</p>
@@ -218,7 +279,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Monthly Rental Income</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{formatTL(metrics.monthlyRentalIncome)}</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{formatUSDC(metrics.monthlyRentalIncome)}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Pending Opportunities</p>
@@ -232,7 +293,11 @@ export default async function DashboardPage() {
             <CardHeader>
               <div>
                 <CardTitle>Portfolio status</CardTitle>
-                <CardDescription>Start building momentum with your first investment.</CardDescription>
+                <CardDescription>
+                  {pendingInvestments.length > 0
+                    ? "Your pending investment requests."
+                    : "Start building momentum with your first investment."}
+                </CardDescription>
               </div>
               <CardAction>
                 <Button asChild variant="default" size="sm">
@@ -241,14 +306,44 @@ export default async function DashboardPage() {
               </CardAction>
             </CardHeader>
             <CardContent>
-              <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">
-                  You haven't made any investments yet.
-                </p>
-                <p className="mt-3 text-sm text-slate-500">
-                  Browse curated property opportunities and make your first allocation.
-                </p>
-              </div>
+              {pendingInvestments.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {pendingInvestments.map((investment) => (
+                    <div
+                      key={investment.id}
+                      className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-medium text-white">
+                          {investment.propertyTitle}
+                        </p>
+                        {investment.created_at ? (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Requested {formatDate(investment.created_at)}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
+                        <span className="text-base font-semibold text-white">
+                          {formatUSDC(investment.amount)}
+                        </span>
+                        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium capitalize text-amber-300">
+                          {investment.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
+                  <p className="text-base font-medium text-slate-300">
+                    You haven't made any investments yet.
+                  </p>
+                  <p className="mt-3 text-sm text-slate-500">
+                    Browse curated property opportunities and make your first allocation.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

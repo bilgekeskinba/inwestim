@@ -20,7 +20,7 @@ export default function RegisterPage() {
           </span>
         </>
       }
-      subtitle="Join thousands of investors and start from just USD 100."
+      subtitle="Join thousands of investors and start from just USDC 100."
     >
       <RegisterForm />
     </AuthShell>

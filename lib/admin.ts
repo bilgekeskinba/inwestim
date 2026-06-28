@@ -116,6 +116,74 @@ export function deriveAdminStats(properties: AdminProperty[]): AdminStats {
   };
 }
 
+export type AdminInvestment = {
+  id: string;
+  amount: number;
+  status: string;
+  created_at: string | null;
+  propertyTitle: string;
+  userEmail: string | null;
+};
+
+/**
+ * Lists pending investment requests for the admin panel, enriched with the
+ * property title and (when readable) the investor's email. Soft-fails to an
+ * empty array. The email join depends on an admin SELECT policy on profiles;
+ * if that policy is absent, emails simply render as "—".
+ */
+export async function getPendingInvestments(
+  supabase: SupabaseServerClient
+): Promise<AdminInvestment[]> {
+  try {
+    const { data, error } = await supabase
+      .from("investments")
+      .select("id, amount, status, created_at, property_id, user_id")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      adminDevError("pending investments query failed", error);
+      return [];
+    }
+
+    const propertyIds = [...new Set(data.map((r) => r.property_id).filter(Boolean))];
+    const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))];
+
+    const titles = new Map<string, string>();
+    if (propertyIds.length > 0) {
+      const { data: props } = await supabase
+        .from("properties")
+        .select("id, title")
+        .in("id", propertyIds);
+      props?.forEach((p) => titles.set(String(p.id), String(p.title)));
+    }
+
+    const emails = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profs, error: profsError } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      if (profsError) adminDevError("investor email lookup failed", profsError);
+      profs?.forEach((p) =>
+        emails.set(String(p.id), p.email ? String(p.email) : null)
+      );
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      amount: Number(row.amount) || 0,
+      status: String(row.status),
+      created_at: (row.created_at as string | null) ?? null,
+      propertyTitle: titles.get(String(row.property_id)) ?? "Property",
+      userEmail: emails.get(String(row.user_id)) ?? null,
+    }));
+  } catch (error) {
+    adminDevError("pending investments error", error);
+    return [];
+  }
+}
+
 /**
  * Loads a single property by id for the edit page. Returns null when missing or
  * on error so the caller can render a not-found state.

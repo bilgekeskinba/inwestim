@@ -146,7 +146,7 @@ export function Footer() {
             {/* Description with better spacing */}
             <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-slate-500">
               Join thousands of global investors using Inwestim to tap into
-              high-growth, income-generating properties - starting from just USD
+              high-growth, income-generating properties - starting from just USDC
               100.
             </p>
 

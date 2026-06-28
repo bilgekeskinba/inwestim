@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { MapPin, TrendingUp, ArrowUpRight, ArrowLeft } from "lucide-react";
+import { MapPin, TrendingUp, ArrowLeft } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
+import { InvestmentModal } from "@/components/investment-modal";
 import { getLivePropertyById, type LivePropertyDetail } from "@/lib/properties";
 
 export const metadata: Metadata = {
@@ -12,8 +13,8 @@ export const metadata: Metadata = {
   description: "Explore this Inwestim property investment opportunity.",
 };
 
-function formatTL(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("tr-TR")} TL`;
+function formatUSDC(value: number): string {
+  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
 }
 
 const riskBadgeClass: Record<string, string> = {
@@ -135,15 +136,15 @@ function PropertyDetail({ property }: { property: LivePropertyDetail }) {
             </p>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <MetricCard label="Total value" value={formatTL(property.total_value)} />
-              <MetricCard label="Minimum investment" value={formatTL(property.minimum_investment)} />
+              <MetricCard label="Target Raise" value={formatUSDC(property.total_value)} />
+              <MetricCard label="Minimum investment" value={formatUSDC(property.minimum_investment)} />
               <MetricCard
                 label="Expected annual return"
                 value={`${Number(property.expected_annual_return) || 0}%`}
               />
               <MetricCard
-                label="Monthly rental income"
-                value={formatTL(property.monthly_rental_income)}
+                label="Estimated Monthly Distribution"
+                value={formatUSDC(property.monthly_rental_income)}
               />
             </div>
           </div>
@@ -188,16 +189,13 @@ function PropertyDetail({ property }: { property: LivePropertyDetail }) {
               </div>
 
               <div className="mt-8 space-y-3">
-                <Button
-                  asChild
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 text-white hover:from-emerald-400 hover:to-emerald-300"
-                >
-                  <Link href="/sign-in">
-                    Start Investing
-                    <ArrowUpRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                <InvestmentModal
+                  propertyId={property.id}
+                  title={property.title}
+                  minimumInvestment={Number(property.minimum_investment) || 0}
+                  totalValue={Number(property.total_value) || 0}
+                  fundingPercentage={Number(property.funding_percentage) || 0}
+                />
                 <Button asChild variant="secondary" size="lg" className="w-full">
                   <Link href="/properties">Back to Properties</Link>
                 </Button>

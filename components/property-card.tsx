@@ -22,17 +22,11 @@ interface PropertyCardProps {
 }
 
 function formatCurrency(amount: number): string {
-  if (amount >= 1000000) {
-    return `${(amount / 1000000).toFixed(1)}M TL`;
-  }
-  if (amount >= 1000) {
-    return `${(amount / 1000).toFixed(0)}K TL`;
-  }
-  return `${(Number(amount) || 0).toLocaleString("tr-TR")} TL`;
+  return `${(Number(amount) || 0).toLocaleString("en-US")} USDC`;
 }
 
 function formatFullCurrency(amount: number): string {
-  return `${(Number(amount) || 0).toLocaleString("tr-TR")} TL`;
+  return `${(Number(amount) || 0).toLocaleString("en-US")} USDC`;
 }
 
 function formatDate(dateString: string): string {

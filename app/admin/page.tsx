@@ -5,17 +5,19 @@ import {
   requireAdmin,
   getAdminProperties,
   deriveAdminStats,
+  getPendingInvestments,
   type AdminProperty,
 } from "@/lib/admin";
 import { DeletePropertyButton } from "@/components/admin/delete-property-button";
+import { InvestmentRequests } from "@/components/admin/investment-requests";
 
 export const metadata: Metadata = {
   title: "Admin | Inwestim",
   description: "Manage Inwestim property listings.",
 };
 
-function formatTL(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("tr-TR")} TL`;
+function formatUSDC(value: number): string {
+  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
 }
 
 const statusBadgeClass: Record<string, string> = {
@@ -56,7 +58,7 @@ function PropertyRow({ property }: { property: AdminProperty }) {
           </span>
           <span>
             Min. investment:{" "}
-            <span className="text-slate-200">{formatTL(property.minimum_investment)}</span>
+            <span className="text-slate-200">{formatUSDC(property.minimum_investment)}</span>
           </span>
           <span>
             Expected return:{" "}
@@ -88,6 +90,7 @@ export default async function AdminPage() {
 
   const properties = await getAdminProperties(supabase);
   const stats = deriveAdminStats(properties);
+  const pendingRequests = await getPendingInvestments(supabase);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -148,6 +151,18 @@ export default async function AdminPage() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
+          <CardHeader>
+            <div>
+              <CardTitle>Investment requests</CardTitle>
+              <CardDescription>Pending requests awaiting your review.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <InvestmentRequests requests={pendingRequests} />
           </CardContent>
         </Card>
       </div>

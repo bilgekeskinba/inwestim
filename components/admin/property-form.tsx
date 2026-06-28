@@ -150,7 +150,7 @@ export function PropertyForm({ mode, initialValues }: Props) {
 
         <div className="space-y-2">
           <label htmlFor="total_value" className={labelClass}>
-            Total value (TL)
+            Target Raise (USDC)
           </label>
           <input
             id="total_value"
@@ -165,7 +165,7 @@ export function PropertyForm({ mode, initialValues }: Props) {
 
         <div className="space-y-2">
           <label htmlFor="minimum_investment" className={labelClass}>
-            Minimum investment (TL)
+            Minimum investment (USDC)
           </label>
           <input
             id="minimum_investment"
@@ -195,7 +195,7 @@ export function PropertyForm({ mode, initialValues }: Props) {
 
         <div className="space-y-2">
           <label htmlFor="monthly_rental_income" className={labelClass}>
-            Monthly rental income (TL)
+            Estimated Monthly Distribution (USDC)
           </label>
           <input
             id="monthly_rental_income"
