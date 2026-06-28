@@ -122,10 +122,11 @@ async function getDashboardMetrics(
 ): Promise<DashboardMetrics> {
   try {
     const [approved, rentals, pending] = await Promise.all([
-      // Approved investments → Portfolio Value (sum) + Active Investments (count).
+      // Approved investments → Portfolio Value (sum of lots) + Active Positions
+      // (count of UNIQUE properties, not lots).
       supabase
         .from("investments")
-        .select("amount")
+        .select("amount, property_id")
         .eq("user_id", userId)
         .eq("status", "approved"),
       // Paid rental distributions → Monthly Rental Income (sum).
@@ -146,9 +147,18 @@ async function getDashboardMetrics(
     if (rentals.error) devError("rental distributions query failed", rentals.error);
     if (pending.error) devError("pending investments query failed", pending.error);
 
+    // Active Positions = number of distinct properties with ≥1 approved lot.
+    const activeCount = approved.error
+      ? 0
+      : new Set(
+          (approved.data ?? [])
+            .map((row) => String(row.property_id ?? ""))
+            .filter(Boolean)
+        ).size;
+
     return {
       portfolioValue: approved.error ? 0 : sumAmounts(approved.data),
-      activeCount: approved.error ? 0 : approved.data?.length ?? 0,
+      activeCount,
       monthlyRentalIncome: rentals.error ? 0 : sumAmounts(rentals.data),
       pendingCount: pending.error ? 0 : pending.count ?? 0,
     };
@@ -222,6 +232,83 @@ async function getPendingInvestments(
   }
 }
 
+type ActivePosition = {
+  propertyId: string;
+  propertyTitle: string;
+  totalAmount: number;
+  purchaseCount: number;
+  latestDate: string | null;
+};
+
+// Aggregates the user's APPROVED investments into one position per property.
+// Each purchase stays a separate row in the DB; this only groups for display.
+// Soft-fails to an empty array so a query error never crashes the dashboard.
+async function getActivePositions(
+  supabase: SupabaseServerClient,
+  userId: string
+): Promise<ActivePosition[]> {
+  try {
+    const { data, error } = await supabase
+      .from("investments")
+      .select("amount, created_at, property_id")
+      .eq("user_id", userId)
+      .eq("status", "approved");
+
+    if (error || !data) {
+      devError("active positions query failed", error);
+      return [];
+    }
+
+    const groups = new Map<
+      string,
+      { total: number; count: number; latest: string | null }
+    >();
+
+    for (const row of data) {
+      const propertyId = String(row.property_id ?? "");
+      if (!propertyId) continue;
+
+      const group = groups.get(propertyId) ?? { total: 0, count: 0, latest: null };
+      group.total += Number(row.amount) || 0;
+      group.count += 1;
+
+      const created = (row.created_at as string | null) ?? null;
+      if (created && (!group.latest || new Date(created) > new Date(group.latest))) {
+        group.latest = created;
+      }
+
+      groups.set(propertyId, group);
+    }
+
+    const propertyIds = [...groups.keys()];
+    const titles = new Map<string, string>();
+
+    if (propertyIds.length > 0) {
+      const { data: props } = await supabase
+        .from("properties")
+        .select("id, title")
+        .in("id", propertyIds);
+      props?.forEach((p) => titles.set(String(p.id), String(p.title)));
+    }
+
+    return propertyIds
+      .map((propertyId) => {
+        const group = groups.get(propertyId)!;
+        return {
+          propertyId,
+          propertyTitle: titles.get(propertyId) ?? "Property",
+          totalAmount: group.total,
+          purchaseCount: group.count,
+          latestDate: group.latest,
+        };
+      })
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+  } catch (error) {
+    devError("active positions error", error);
+    return [];
+  }
+}
+
 export default async function DashboardPage() {
   const { supabase, userId, email, displayName } = await getDashboardUser();
 
@@ -231,6 +318,7 @@ export default async function DashboardPage() {
 
   const metrics = await getDashboardMetrics(supabase, userId);
   const pendingInvestments = await getPendingInvestments(supabase, userId);
+  const activePositions = await getActivePositions(supabase, userId);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -274,7 +362,7 @@ export default async function DashboardPage() {
                   <p className="mt-3 text-3xl font-semibold text-white">{formatUSDC(metrics.portfolioValue)}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
-                  <p className="text-sm text-slate-400">Active Investments</p>
+                  <p className="text-sm text-slate-400">Active Positions</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{metrics.activeCount}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
@@ -347,6 +435,57 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="mt-6 rounded-3xl border-white/10 bg-slate-900/90">
+          <CardHeader>
+            <div>
+              <CardTitle>Active Positions</CardTitle>
+              <CardDescription>
+                Your approved holdings, grouped by property.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {activePositions.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {activePositions.map((position) => (
+                  <div
+                    key={position.propertyId}
+                    className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-medium text-white">
+                        {position.propertyTitle}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {position.purchaseCount}{" "}
+                        {position.purchaseCount === 1 ? "purchase" : "purchases"}
+                        {position.latestDate
+                          ? ` · latest ${formatDate(position.latestDate)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
+                      <span className="text-base font-semibold text-white">
+                        {formatUSDC(position.totalAmount)}
+                      </span>
+                      <span className="text-xs text-slate-400">total invested</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
+                <p className="text-base font-medium text-slate-300">
+                  No active positions yet.
+                </p>
+                <p className="mt-3 text-sm text-slate-500">
+                  Approved investments will appear here, grouped by property.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
