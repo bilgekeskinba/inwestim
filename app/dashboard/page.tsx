@@ -79,7 +79,7 @@ async function getDashboardUser() {
   } = await supabase.auth.getUser();
 
   if (error || !user?.id) {
-    return { email: null, displayName: null };
+    return { supabase, userId: null, email: null, displayName: null };
   }
 
   const email = user.email ?? null;
@@ -92,15 +92,84 @@ async function getDashboardUser() {
 
   const displayName = fullName || email || "investor";
 
-  return { email, displayName };
+  return { supabase, userId: user.id, email, displayName };
+}
+
+type DashboardMetrics = {
+  portfolioValue: number;
+  activeCount: number;
+  monthlyRentalIncome: number;
+  pendingCount: number;
+};
+
+const EMPTY_METRICS: DashboardMetrics = {
+  portfolioValue: 0,
+  activeCount: 0,
+  monthlyRentalIncome: 0,
+  pendingCount: 0,
+};
+
+function sumAmounts(rows: { amount: number | string | null }[] | null): number {
+  if (!rows) return 0;
+  return rows.reduce((total, row) => total + (Number(row.amount) || 0), 0);
+}
+
+// Reads the current user's portfolio metrics from Supabase. Each query is
+// independent and soft-fails to 0 so a single failure never crashes the page.
+async function getDashboardMetrics(
+  supabase: SupabaseServerClient,
+  userId: string
+): Promise<DashboardMetrics> {
+  try {
+    const [approved, rentals, pending] = await Promise.all([
+      // Approved investments → Portfolio Value (sum) + Active Investments (count).
+      supabase
+        .from("investments")
+        .select("amount")
+        .eq("user_id", userId)
+        .eq("status", "approved"),
+      // Paid rental distributions → Monthly Rental Income (sum).
+      supabase
+        .from("rental_distributions")
+        .select("amount")
+        .eq("user_id", userId)
+        .eq("status", "paid"),
+      // Pending investments → Pending Opportunities (count only).
+      supabase
+        .from("investments")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "pending"),
+    ]);
+
+    if (approved.error) devError("approved investments query failed", approved.error);
+    if (rentals.error) devError("rental distributions query failed", rentals.error);
+    if (pending.error) devError("pending investments query failed", pending.error);
+
+    return {
+      portfolioValue: approved.error ? 0 : sumAmounts(approved.data),
+      activeCount: approved.error ? 0 : approved.data?.length ?? 0,
+      monthlyRentalIncome: rentals.error ? 0 : sumAmounts(rentals.data),
+      pendingCount: pending.error ? 0 : pending.count ?? 0,
+    };
+  } catch (error) {
+    devError("metrics query error", error);
+    return EMPTY_METRICS;
+  }
+}
+
+function formatTL(value: number): string {
+  return `${value.toLocaleString("tr-TR")} TL`;
 }
 
 export default async function DashboardPage() {
-  const { email, displayName } = await getDashboardUser();
+  const { supabase, userId, email, displayName } = await getDashboardUser();
 
-  if (!email) {
+  if (!email || !userId) {
     redirect("/sign-in");
   }
+
+  const metrics = await getDashboardMetrics(supabase, userId);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -141,19 +210,19 @@ export default async function DashboardPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Portfolio Value</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">0 TL</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{formatTL(metrics.portfolioValue)}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Active Investments</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">0</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{metrics.activeCount}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Monthly Rental Income</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">0 TL</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{formatTL(metrics.monthlyRentalIncome)}</p>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
                   <p className="text-sm text-slate-400">Pending Opportunities</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">0</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{metrics.pendingCount}</p>
                 </div>
               </div>
             </CardContent>
