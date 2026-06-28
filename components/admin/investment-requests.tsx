@@ -21,9 +21,46 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // Recomputes a property's funding_percentage from the sum of its approved
+  // investments. Skips silently when total_value is missing/zero so funding is
+  // left unchanged. Never throws — funding sync must not fail the approval.
+  const syncFundingPercentage = async (
+    supabase: ReturnType<typeof getSupabaseBrowserClient>,
+    propertyId: string,
+    totalValue: number
+  ) => {
+    if (!propertyId || !(totalValue > 0)) return;
+
+    const { data, error } = await supabase
+      .from("investments")
+      .select("amount")
+      .eq("property_id", propertyId)
+      .eq("status", "approved");
+
+    if (error || !data) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[admin] approved-sum query failed", error);
+      }
+      return;
+    }
+
+    const approvedSum = data.reduce((total, row) => total + (Number(row.amount) || 0), 0);
+    const funding = Math.min(100, Math.round((approvedSum / totalValue) * 100));
+
+    const { error: updateError } = await supabase
+      .from("properties")
+      .update({ funding_percentage: funding })
+      .eq("id", propertyId);
+
+    if (updateError && process.env.NODE_ENV !== "production") {
+      console.error("[admin] funding_percentage update failed", updateError);
+    }
+  };
+
   const updateStatus = async (id: string, status: "approved" | "rejected") => {
     setBusyId(id);
 
+    const request = requests.find((r) => r.id === id);
     const supabase = getSupabaseBrowserClient();
     const { error } = await supabase.from("investments").update({ status }).eq("id", id);
 
@@ -36,6 +73,15 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
         window.alert(`Could not update request: ${error.message}`);
       }
       return;
+    }
+
+    // Only approvals affect funding; rejections leave funding_percentage as-is.
+    if (status === "approved" && request) {
+      await syncFundingPercentage(
+        supabase,
+        request.propertyId,
+        request.propertyTotalValue
+      );
     }
 
     setBusyId(null);

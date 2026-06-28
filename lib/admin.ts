@@ -121,7 +121,9 @@ export type AdminInvestment = {
   amount: number;
   status: string;
   created_at: string | null;
+  propertyId: string;
   propertyTitle: string;
+  propertyTotalValue: number;
   userEmail: string | null;
 };
 
@@ -150,12 +152,16 @@ export async function getPendingInvestments(
     const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))];
 
     const titles = new Map<string, string>();
+    const totalValues = new Map<string, number>();
     if (propertyIds.length > 0) {
       const { data: props } = await supabase
         .from("properties")
-        .select("id, title")
+        .select("id, title, total_value")
         .in("id", propertyIds);
-      props?.forEach((p) => titles.set(String(p.id), String(p.title)));
+      props?.forEach((p) => {
+        titles.set(String(p.id), String(p.title));
+        totalValues.set(String(p.id), Number(p.total_value) || 0);
+      });
     }
 
     const emails = new Map<string, string | null>();
@@ -175,7 +181,9 @@ export async function getPendingInvestments(
       amount: Number(row.amount) || 0,
       status: String(row.status),
       created_at: (row.created_at as string | null) ?? null,
+      propertyId: String(row.property_id ?? ""),
       propertyTitle: titles.get(String(row.property_id)) ?? "Property",
+      propertyTotalValue: totalValues.get(String(row.property_id)) ?? 0,
       userEmail: emails.get(String(row.user_id)) ?? null,
     }));
   } catch (error) {
