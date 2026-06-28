@@ -65,6 +65,15 @@ function PropertyRow({ property }: { property: AdminProperty }) {
         </div>
       </div>
       <div className="flex flex-shrink-0 flex-wrap items-center gap-3">
+        {property.status === "live" ? (
+          <Button asChild variant="outline" size="sm">
+            <a href={`/properties/${property.id}`}>View</a>
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" disabled title="Preview available only for live properties">
+            Preview unavailable
+          </Button>
+        )}
         <Button asChild variant="secondary" size="sm">
           <a href={`/admin/properties/${property.id}/edit`}>Edit</a>
         </Button>

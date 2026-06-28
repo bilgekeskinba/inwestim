@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   MapPin,
   TrendingUp,
@@ -22,26 +23,16 @@ interface PropertyCardProps {
 
 function formatCurrency(amount: number): string {
   if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`;
+    return `${(amount / 1000000).toFixed(1)}M TL`;
   }
   if (amount >= 1000) {
-    return `$${(amount / 1000).toFixed(0)}K`;
+    return `${(amount / 1000).toFixed(0)}K TL`;
   }
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return `${(Number(amount) || 0).toLocaleString("tr-TR")} TL`;
 }
 
 function formatFullCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return `${(Number(amount) || 0).toLocaleString("tr-TR")} TL`;
 }
 
 function formatDate(dateString: string): string {
@@ -104,7 +95,8 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const riskConfig = getRiskConfig(property.riskType);
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.15)] hover:border-border hover:-translate-y-1">
+    <Link href={`/properties/${property.id}`} className="block h-full">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all duration-300 hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.15)] hover:border-border hover:-translate-y-1">
       {/* Property Image */}
       <div className="relative aspect-[16/10] overflow-hidden">
         <Image
@@ -270,14 +262,18 @@ export function PropertyCard({ property }: PropertyCardProps) {
         {/* CTA Button */}
         <div className="mt-auto pt-5">
           <Button
+            asChild
             className="w-full rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg shadow-slate-900/15 transition-all duration-300 hover:shadow-xl hover:shadow-slate-900/25 hover:scale-[1.01] active:scale-[0.99]"
             size="lg"
           >
-            {property.status === "live" ? "Start Investing Now" : "View Details"}
-            <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            <span>
+              {property.status === "live" ? "Start Investing Now" : "View Details"}
+              <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </span>
           </Button>
         </div>
       </div>
     </article>
+    </Link>
   );
 }
