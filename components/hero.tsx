@@ -61,7 +61,7 @@ export function Hero() {
           </Button>
 
           <a
-            href="/#how-it-works"
+            href="#how-it-works"
             className="group flex h-14 items-center gap-2.5 rounded-full border-2 border-white/70 px-7 text-base font-semibold text-white transition-all hover:border-white hover:bg-white/10"
           >
             <PlayCircle className="h-5 w-5" />

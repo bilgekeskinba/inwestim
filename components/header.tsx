@@ -50,19 +50,19 @@ export function Header() {
           Properties
         </Link>
         <Link
-          href="/#how-it-works"
+          href="/how-it-works"
           className="text-sm font-medium text-white/80 transition-colors hover:text-white"
         >
           How It Works
         </Link>
         <Link
-          href="/#about"
+          href="/about"
           className="text-sm font-medium text-white/80 transition-colors hover:text-white"
         >
           About
         </Link>
         <Link
-          href="/#contact"
+          href="/contact"
           className="text-sm font-medium text-white/80 transition-colors hover:text-white"
         >
           Contact

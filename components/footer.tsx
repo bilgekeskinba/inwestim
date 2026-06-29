@@ -45,7 +45,7 @@ const footerLinks = {
   invest: {
     title: "Invest",
     links: [
-      { label: "About Us", href: "#" },
+      { label: "About Us", href: "/about" },
       { label: "Properties", href: "/properties" },
       { label: "Exchange", href: "#" },
       { label: "Press Kit", href: "#" },
@@ -66,10 +66,11 @@ const footerLinks = {
   help: {
     title: "Help",
     links: [
+      { label: "How it works?", href: "/how-it-works" },
+      { label: "Contact", href: "/contact" },
       { label: "Info Center", href: "#" },
       { label: "F.A.Q.", href: "#" },
       { label: "Support", href: "#" },
-      { label: "How it works?", href: "/#how-it-works" },
     ],
   },
 };

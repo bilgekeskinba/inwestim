@@ -90,7 +90,10 @@ async function getDashboardUser() {
     full_name: (user.user_metadata?.full_name as string | undefined) ?? null,
   });
 
-  const displayName = fullName || email || "investor";
+  // Prefer full_name; otherwise fall back to the local part of the email so the
+  // large heading never shows a full email address.
+  const emailPrefix = email ? email.split("@")[0] : null;
+  const displayName = fullName || emailPrefix || "investor";
 
   return { supabase, userId: user.id, email, displayName };
 }
@@ -320,15 +323,36 @@ export default async function DashboardPage() {
   const pendingInvestments = await getPendingInvestments(supabase, userId);
   const activePositions = await getActivePositions(supabase, userId);
 
+  // Initial for the account icon, mirroring the public header's user badge.
+  const initial = email ? email.charAt(0).toUpperCase() : "";
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <div className="relative mx-auto max-w-7xl px-6 py-10 lg:px-8">
         <div className="mb-10 flex flex-col gap-6 rounded-3xl border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-6">
+            <a href="/" className="flex items-center gap-2" aria-label="Inwestim home">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
+                <span className="text-xl font-bold text-white">I</span>
+              </div>
+              <span className="text-xl font-semibold tracking-tight text-white">
+                Inwestim
+              </span>
+            </a>
+            <a
+              href="/"
+              title="Account"
+              aria-label="Account"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white shadow-sm shadow-black/20 transition-colors hover:bg-white/20"
+            >
+              {initial}
+            </a>
+          </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-emerald-400/80">Welcome back</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-emerald-400/80">Dashboard</p>
               <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Hello, {displayName}.
+                Welcome back, {displayName}.
               </h1>
               <p className="mt-2 max-w-2xl text-base text-slate-300">
                 Your Inwestim dashboard is ready. Monitor your portfolio, review opportunities, and manage your account from one place.
@@ -384,7 +408,9 @@ export default async function DashboardPage() {
                 <CardDescription>
                   {pendingInvestments.length > 0
                     ? "Your pending investment requests."
-                    : "Start building momentum with your first investment."}
+                    : activePositions.length > 0
+                      ? "Your active positions at a glance."
+                      : "Start building momentum with your first investment."}
                 </CardDescription>
               </div>
               <CardAction>
@@ -421,6 +447,26 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : activePositions.length > 0 ? (
+                <div className="flex min-h-[220px] flex-col justify-center gap-4 rounded-3xl border border-white/10 bg-slate-950/60 p-8">
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-slate-400">Active positions</p>
+                      <p className="mt-2 text-3xl font-semibold text-white">
+                        {activePositions.length}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-slate-400">Total invested</p>
+                      <p className="mt-2 text-3xl font-semibold text-white">
+                        {formatUSDC(metrics.portfolioValue)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    See the full breakdown in Active Positions below.
+                  </p>
                 </div>
               ) : (
                 <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
