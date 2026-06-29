@@ -62,7 +62,21 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
 
     const request = requests.find((r) => r.id === id);
     const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.from("investments").update({ status }).eq("id", id);
+
+    // On approval, stamp approved_at and set eligible_from = approved_at + 1 day
+    // (a lot starts earning distributions the day after approval).
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const payload =
+      status === "approved"
+        ? {
+            status,
+            approved_at: now.toISOString(),
+            eligible_from: new Date(now.getTime() + DAY_MS).toISOString(),
+          }
+        : { status };
+
+    const { error } = await supabase.from("investments").update(payload).eq("id", id);
 
     if (error) {
       setBusyId(null);
