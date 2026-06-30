@@ -250,6 +250,33 @@ export async function getDistributionCycles(
 }
 
 /**
+ * Counts legacy approved investments missing the distribution timestamps:
+ *   status = 'approved' AND (approved_at IS NULL OR eligible_from IS NULL).
+ * These were approved before those columns existed and are skipped by the
+ * distribution engine until repaired. Soft-fails to 0.
+ */
+export async function getLegacyApprovedCount(
+  supabase: SupabaseServerClient
+): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from("investments")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "approved")
+      .or("approved_at.is.null,eligible_from.is.null");
+
+    if (error) {
+      adminDevError("legacy approved count failed", error);
+      return 0;
+    }
+    return count ?? 0;
+  } catch (error) {
+    adminDevError("legacy approved count error", error);
+    return 0;
+  }
+}
+
+/**
  * Loads a single property by id for the edit page. Returns null when missing or
  * on error so the caller can render a not-found state.
  */

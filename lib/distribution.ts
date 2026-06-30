@@ -67,6 +67,7 @@ export type RentalDistributionRow = {
   user_id: string;
   property_id: string;
   amount: number;
+  eligible_days: number;
   status: "pending";
   period_start: string;
   period_end: string;
@@ -217,6 +218,7 @@ export function calculateProrataDistribution({
     user_id: row.lot.user_id,
     property_id: row.lot.property_id,
     amount: amounts[i],
+    eligible_days: row.days,
     status: "pending",
     period_start: startIso,
     period_end: endIso,
