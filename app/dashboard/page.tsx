@@ -312,6 +312,70 @@ async function getActivePositions(
   }
 }
 
+type DistributionHistoryRow = {
+  id: string;
+  propertyTitle: string;
+  amount: number;
+  status: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  eligibleDays: number | null;
+  paidAt: string | null;
+};
+
+// Lists the current user's rental distributions (all statuses), newest first,
+// enriched with property titles. Soft-fails to an empty array.
+async function getDistributionHistory(
+  supabase: SupabaseServerClient,
+  userId: string
+): Promise<DistributionHistoryRow[]> {
+  try {
+    const { data, error } = await supabase
+      .from("rental_distributions")
+      .select(
+        "id, amount, status, period_start, period_end, eligible_days, paid_at, property_id, created_at"
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      devError("distribution history query failed", error);
+      return [];
+    }
+
+    const propertyIds = [...new Set(data.map((row) => row.property_id).filter(Boolean))];
+    const titles = new Map<string, string>();
+    if (propertyIds.length > 0) {
+      const { data: props } = await supabase
+        .from("properties")
+        .select("id, title")
+        .in("id", propertyIds);
+      props?.forEach((p) => titles.set(String(p.id), String(p.title)));
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      propertyTitle: titles.get(String(row.property_id)) ?? "Property",
+      amount: Number(row.amount) || 0,
+      status: String(row.status),
+      periodStart: (row.period_start as string | null) ?? null,
+      periodEnd: (row.period_end as string | null) ?? null,
+      eligibleDays: row.eligible_days == null ? null : Number(row.eligible_days),
+      paidAt: (row.paid_at as string | null) ?? null,
+    }));
+  } catch (error) {
+    devError("distribution history error", error);
+    return [];
+  }
+}
+
+const distributionStatusClass: Record<string, string> = {
+  pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+  paid: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+  failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
+  cancelled: "border-slate-400/30 bg-slate-400/10 text-slate-300",
+};
+
 export default async function DashboardPage() {
   const { supabase, userId, email, displayName } = await getDashboardUser();
 
@@ -322,6 +386,7 @@ export default async function DashboardPage() {
   const metrics = await getDashboardMetrics(supabase, userId);
   const pendingInvestments = await getPendingInvestments(supabase, userId);
   const activePositions = await getActivePositions(supabase, userId);
+  const distributionHistory = await getDistributionHistory(supabase, userId);
 
   // Initial for the account icon, mirroring the public header's user badge.
   const initial = email ? email.charAt(0).toUpperCase() : "";
@@ -527,6 +592,68 @@ export default async function DashboardPage() {
                 </p>
                 <p className="mt-3 text-sm text-slate-500">
                   Approved investments will appear here, grouped by property.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6 rounded-3xl border-white/10 bg-slate-900/90">
+          <CardHeader>
+            <div>
+              <CardTitle>Distribution History</CardTitle>
+              <CardDescription>
+                Rental distributions across your positions.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {distributionHistory.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {distributionHistory.map((distribution) => (
+                  <div
+                    key={distribution.id}
+                    className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p className="truncate text-base font-medium text-white">
+                          {distribution.propertyTitle}
+                        </p>
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
+                            distributionStatusClass[distribution.status] ??
+                            distributionStatusClass.pending
+                          }`}
+                        >
+                          {distribution.status}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatDate(distribution.periodStart)} – {formatDate(distribution.periodEnd)}
+                        {distribution.eligibleDays != null
+                          ? ` · ${distribution.eligibleDays} eligible ${
+                              distribution.eligibleDays === 1 ? "day" : "days"
+                            }`
+                          : ""}
+                        {distribution.paidAt ? ` · paid ${formatDate(distribution.paidAt)}` : ""}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-base font-semibold text-white">
+                        {formatUSDC(distribution.amount)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
+                <p className="text-base font-medium text-slate-300">
+                  No distributions yet.
+                </p>
+                <p className="mt-3 text-sm text-slate-500">
+                  Once your positions earn rental income, distributions will appear here.
                 </p>
               </div>
             )}
