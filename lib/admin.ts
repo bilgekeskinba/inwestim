@@ -192,6 +192,63 @@ export async function getPendingInvestments(
   }
 }
 
+export type AdminDistributionCycle = {
+  id: string;
+  propertyTitle: string;
+  distributionType: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  netDistribution: number;
+  status: string;
+  createdAt: string | null;
+};
+
+/**
+ * Lists distribution cycles for the admin panel, enriched with property titles.
+ * Soft-fails to an empty array.
+ */
+export async function getDistributionCycles(
+  supabase: SupabaseServerClient
+): Promise<AdminDistributionCycle[]> {
+  try {
+    const { data, error } = await supabase
+      .from("distribution_cycles")
+      .select(
+        "id, property_id, distribution_type, period_start, period_end, net_distribution, status, created_at"
+      )
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      adminDevError("distribution cycles query failed", error);
+      return [];
+    }
+
+    const propertyIds = [...new Set(data.map((r) => r.property_id).filter(Boolean))];
+    const titles = new Map<string, string>();
+    if (propertyIds.length > 0) {
+      const { data: props } = await supabase
+        .from("properties")
+        .select("id, title")
+        .in("id", propertyIds);
+      props?.forEach((p) => titles.set(String(p.id), String(p.title)));
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      propertyTitle: titles.get(String(row.property_id)) ?? "Property",
+      distributionType: String(row.distribution_type),
+      periodStart: (row.period_start as string | null) ?? null,
+      periodEnd: (row.period_end as string | null) ?? null,
+      netDistribution: Number(row.net_distribution) || 0,
+      status: String(row.status),
+      createdAt: (row.created_at as string | null) ?? null,
+    }));
+  } catch (error) {
+    adminDevError("distribution cycles error", error);
+    return [];
+  }
+}
+
 /**
  * Loads a single property by id for the edit page. Returns null when missing or
  * on error so the caller can render a not-found state.
