@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { AppShell } from "@/components/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -87,9 +88,11 @@ export default async function PositionDetailPage({
   const distributions = distData ?? [];
 
   const shell = (children: React.ReactNode) => (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
-      <div className="relative mx-auto max-w-5xl px-6 py-10 lg:px-8">{children}</div>
-    </main>
+    <AppShell>
+      <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
+        <div className="relative mx-auto max-w-5xl px-6 py-10 lg:px-8">{children}</div>
+      </main>
+    </AppShell>
   );
 
   if (lots.length === 0) {

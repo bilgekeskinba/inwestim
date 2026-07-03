@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
+import { AppShell } from "@/components/app-shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -389,31 +390,11 @@ export default async function DashboardPage() {
   const activePositions = await getActivePositions(supabase, userId);
   const distributionHistory = await getDistributionHistory(supabase, userId);
 
-  // Initial for the account icon, mirroring the public header's user badge.
-  const initial = email ? email.charAt(0).toUpperCase() : "";
-
   return (
+    <AppShell>
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <div className="relative mx-auto max-w-7xl px-6 py-10 lg:px-8">
         <div className="mb-10 flex flex-col gap-6 rounded-3xl border border-white/10 bg-slate-950/80 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl">
-          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-6">
-            <a href="/" className="flex items-center gap-2" aria-label="Inwestim home">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <span className="text-xl font-bold text-white">I</span>
-              </div>
-              <span className="text-xl font-semibold tracking-tight text-white">
-                Inwestim
-              </span>
-            </a>
-            <a
-              href="/"
-              title="Account"
-              aria-label="Account"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white shadow-sm shadow-black/20 transition-colors hover:bg-white/20"
-            >
-              {initial}
-            </a>
-          </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.24em] text-emerald-400/80">Dashboard</p>
@@ -428,11 +409,6 @@ export default async function DashboardPage() {
               <p className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
                 {email}
               </p>
-              <form action="/dashboard/logout" method="post">
-                <Button type="submit" variant="secondary" size="sm">
-                  Log out
-                </Button>
-              </form>
             </div>
           </div>
         </div>
@@ -666,5 +642,6 @@ export default async function DashboardPage() {
         </Card>
       </div>
     </main>
+    </AppShell>
   );
 }
