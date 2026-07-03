@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardHeader,
@@ -9,6 +8,8 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { Web3Provider } from "@/components/web3-provider";
+import { ExternalWallet } from "@/components/external-wallet";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -96,6 +97,11 @@ export default async function WalletPage() {
     else if (tx.status === "pending") pendingBalance += signed;
   }
 
+  // WalletConnect is gated until deposits exist, to avoid confusing external
+  // wallet balance with the separate Inwestim platform balance.
+  const walletConnectEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_WALLETCONNECT === "true";
+
   return (
     <AppShell>
       <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -133,24 +139,31 @@ export default async function WalletPage() {
             </CardContent>
           </Card>
 
-          {/* Connected Wallet */}
+          {/* External Wallet (read-only identity via WalletConnect, feature-flagged) */}
           <Card className="mb-8 rounded-3xl border-white/10 bg-slate-900/90">
             <CardHeader>
               <div>
-                <CardTitle>Connected Wallet</CardTitle>
-                <CardDescription>Link an external wallet to move funds in and out.</CardDescription>
+                <CardTitle>External Wallet</CardTitle>
+                <CardDescription>
+                  {walletConnectEnabled
+                    ? "Connect a Polygon wallet as your identity. Read-only — no funds move."
+                    : "Link an external wallet to your account."}
+                </CardDescription>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-start gap-4 rounded-3xl border border-white/10 bg-slate-950/60 p-6 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Status</p>
-                  <p className="mt-1 text-lg font-medium text-white">Not connected</p>
+              {walletConnectEnabled ? (
+                <Web3Provider>
+                  <ExternalWallet userId={user.id} />
+                </Web3Provider>
+              ) : (
+                <div className="flex flex-col items-start gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-6">
+                  <p className="text-lg font-medium text-white">Wallet connection coming soon</p>
+                  <p className="text-sm text-slate-400">
+                    Deposits and withdrawals will be available in a later sprint.
+                  </p>
                 </div>
-                <Button type="button" variant="secondary" disabled>
-                  Connect Wallet (Coming Soon)
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
 
