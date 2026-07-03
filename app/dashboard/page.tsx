@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -560,12 +561,13 @@ export default async function DashboardPage() {
             {activePositions.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {activePositions.map((position) => (
-                  <div
+                  <a
                     key={position.propertyId}
-                    className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                    href={`/dashboard/positions/${position.propertyId}`}
+                    className="group flex cursor-pointer flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 transition-colors hover:border-white/20 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-base font-medium text-white">
+                      <p className="truncate text-base font-medium text-white transition-colors group-hover:text-emerald-300">
                         {position.propertyTitle}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
@@ -576,13 +578,16 @@ export default async function DashboardPage() {
                           : ""}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
-                      <span className="text-base font-semibold text-white">
-                        {formatUSDC(position.totalAmount)}
-                      </span>
-                      <span className="text-xs text-slate-400">total invested</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-1">
+                        <span className="text-base font-semibold text-white">
+                          {formatUSDC(position.totalAmount)}
+                        </span>
+                        <span className="text-xs text-slate-400">total invested</span>
+                      </div>
+                      <ArrowRight className="h-5 w-5 shrink-0 text-slate-600 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-emerald-400" />
                     </div>
-                  </div>
+                  </a>
                 ))}
               </div>
             ) : (
