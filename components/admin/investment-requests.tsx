@@ -57,6 +57,41 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
     }
   };
 
+  // Records a completed debit for an approved investment. Idempotent: skips if
+  // a matching wallet transaction already exists. Soft-fails so it never blocks
+  // the approval.
+  const createInvestmentDebit = async (
+    supabase: ReturnType<typeof getSupabaseBrowserClient>,
+    investment: AdminInvestment
+  ) => {
+    if (!investment.userId) return;
+
+    const { data: existing } = await supabase
+      .from("wallet_transactions")
+      .select("id")
+      .eq("reference_type", "investment")
+      .eq("reference_id", investment.id)
+      .eq("type", "investment")
+      .limit(1);
+
+    if (existing && existing.length > 0) return;
+
+    const { error } = await supabase.from("wallet_transactions").insert({
+      user_id: investment.userId,
+      type: "investment",
+      direction: "debit",
+      amount: Number(investment.amount) || 0,
+      status: "completed",
+      reference_type: "investment",
+      reference_id: investment.id,
+      description: "Investment approved",
+    });
+
+    if (error && process.env.NODE_ENV !== "production") {
+      console.error("[admin] investment debit insert failed", error);
+    }
+  };
+
   const updateStatus = async (id: string, status: "approved" | "rejected") => {
     setBusyId(id);
 
@@ -89,13 +124,14 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
       return;
     }
 
-    // Only approvals affect funding; rejections leave funding_percentage as-is.
+    // Only approvals affect funding / ledger; rejections leave both as-is.
     if (status === "approved" && request) {
       await syncFundingPercentage(
         supabase,
         request.propertyId,
         request.propertyTotalValue
       );
+      await createInvestmentDebit(supabase, request);
     }
 
     setBusyId(null);

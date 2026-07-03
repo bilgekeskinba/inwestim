@@ -29,6 +29,62 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // Creates a completed credit wallet transaction for every paid distribution
+  // in a cycle. Idempotent: skips distributions that already have a matching
+  // wallet transaction. Soft-fails (logs in dev) so the payout confirmation is
+  // never blocked by the ledger step.
+  const createDistributionCredits = async (
+    supabase: ReturnType<typeof getSupabaseBrowserClient>,
+    cycleId: string
+  ) => {
+    const { data: paidRows, error: paidError } = await supabase
+      .from("rental_distributions")
+      .select("id, user_id, amount")
+      .eq("distribution_cycle_id", cycleId)
+      .eq("status", "paid");
+
+    if (paidError || !paidRows || paidRows.length === 0) {
+      if (paidError && process.env.NODE_ENV !== "production") {
+        console.error("[admin] paid distributions query failed", paidError);
+      }
+      return;
+    }
+
+    const distributionIds = paidRows.map((row) => String(row.id));
+
+    // Skip distributions already credited (idempotency).
+    const { data: existing } = await supabase
+      .from("wallet_transactions")
+      .select("reference_id")
+      .eq("reference_type", "rental_distribution")
+      .in("reference_id", distributionIds);
+
+    const alreadyCredited = new Set((existing ?? []).map((e) => String(e.reference_id)));
+
+    const txRows = paidRows
+      .filter((row) => !alreadyCredited.has(String(row.id)))
+      .map((row) => ({
+        user_id: row.user_id,
+        type: "distribution",
+        direction: "credit",
+        amount: Number(row.amount) || 0,
+        status: "completed",
+        reference_type: "rental_distribution",
+        reference_id: row.id,
+        description: "Rental distribution payout",
+      }));
+
+    if (txRows.length === 0) return;
+
+    const { error: insertError } = await supabase
+      .from("wallet_transactions")
+      .insert(txRows);
+
+    if (insertError && process.env.NODE_ENV !== "production") {
+      console.error("[admin] wallet credit insert failed", insertError);
+    }
+  };
+
   const markAsPaid = async (cycleId: string) => {
     setBusyId(cycleId);
 
@@ -70,6 +126,11 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
       }
       return;
     }
+
+    // Ledger: record a completed credit per paid distribution. Best-effort and
+    // idempotent (skips distributions that already have a wallet transaction),
+    // so it won't block the payment confirmation if it fails.
+    await createDistributionCredits(supabase, cycleId);
 
     setBusyId(null);
     router.refresh();

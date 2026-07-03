@@ -25,6 +25,24 @@ function sumAmounts(rows: { amount: number | string | null }[] | null): number {
   return rows.reduce((total, row) => total + (Number(row.amount) || 0), 0);
 }
 
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatSignedUSDC(amount: number, direction: string): string {
+  const sign = direction === "debit" ? "-" : "+";
+  return `${sign}${formatUSDC(Number(amount) || 0)}`;
+}
+
+const txStatusClass: Record<string, string> = {
+  completed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+  pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+  failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
+};
+
 function BalanceCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
@@ -44,8 +62,7 @@ export default async function WalletPage() {
     redirect("/sign-in");
   }
 
-  // Real figures where easy; simulated balances are mocked to 0 for now.
-  const [approved, paid] = await Promise.all([
+  const [approved, paid, ledger] = await Promise.all([
     supabase
       .from("investments")
       .select("amount")
@@ -56,12 +73,28 @@ export default async function WalletPage() {
       .select("amount")
       .eq("user_id", user.id)
       .eq("status", "paid"),
+    // Ledger-based balances + history: no stored balance, derived from txns.
+    supabase
+      .from("wallet_transactions")
+      .select("id, type, direction, amount, status, description, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const totalInvested = approved.error ? 0 : sumAmounts(approved.data);
   const lifetimeDistributions = paid.error ? 0 : sumAmounts(paid.data);
-  const availableBalance = 0; // Inwestim platform balance (simulated).
-  const pendingBalance = 0; // Simulated.
+
+  const transactions = ledger.error ? [] : ledger.data ?? [];
+
+  // Available Balance = sum(completed credits) − sum(completed debits).
+  // Pending Balance = the same over pending transactions.
+  let availableBalance = 0;
+  let pendingBalance = 0;
+  for (const tx of transactions) {
+    const signed = (Number(tx.amount) || 0) * (tx.direction === "debit" ? -1 : 1);
+    if (tx.status === "completed") availableBalance += signed;
+    else if (tx.status === "pending") pendingBalance += signed;
+  }
 
   return (
     <AppShell>
@@ -130,12 +163,49 @@ export default async function WalletPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">No transactions yet.</p>
-                <p className="mt-3 text-sm text-slate-500">
-                  Wallet transactions will appear here once available.
-                </p>
-              </div>
+              {transactions.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {transactions.map((tx) => (
+                    <div
+                      key={String(tx.id)}
+                      className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-base font-medium capitalize text-white">
+                            {String(tx.type)}
+                          </span>
+                          <span
+                            className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
+                              txStatusClass[String(tx.status)] ?? txStatusClass.pending
+                            }`}
+                          >
+                            {String(tx.status)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {formatDate((tx.created_at as string | null) ?? null)}
+                          {tx.description ? ` · ${String(tx.description)}` : ""}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-base font-semibold ${
+                          tx.direction === "debit" ? "text-rose-300" : "text-emerald-300"
+                        }`}
+                      >
+                        {formatSignedUSDC(Number(tx.amount) || 0, String(tx.direction))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
+                  <p className="text-base font-medium text-slate-300">No transactions yet.</p>
+                  <p className="mt-3 text-sm text-slate-500">
+                    Wallet transactions will appear here once available.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

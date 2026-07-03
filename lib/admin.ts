@@ -118,6 +118,7 @@ export function deriveAdminStats(properties: AdminProperty[]): AdminStats {
 
 export type AdminInvestment = {
   id: string;
+  userId: string;
   amount: number;
   status: string;
   created_at: string | null;
@@ -178,6 +179,7 @@ export async function getPendingInvestments(
 
     return data.map((row) => ({
       id: String(row.id),
+      userId: String(row.user_id ?? ""),
       amount: Number(row.amount) || 0,
       status: String(row.status),
       created_at: (row.created_at as string | null) ?? null,
