@@ -7,6 +7,7 @@ import { AppSectionHeader } from "@/components/app-section-header";
 import { Web3Provider } from "@/components/web3-provider";
 import { ExternalWallet } from "@/components/external-wallet";
 import { DepositRequestForm } from "@/components/deposit-request-form";
+import { BlockchainDepositForm } from "@/components/blockchain-deposit-form";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
@@ -172,7 +173,13 @@ export default async function WalletPage() {
               description="Request a deposit; an admin confirms it before it credits your balance."
             />
             <CardContent>
-              <DepositRequestForm userId={user.id} />
+              {walletConnectEnabled ? (
+                <Web3Provider>
+                  <BlockchainDepositForm userId={user.id} />
+                </Web3Provider>
+              ) : (
+                <DepositRequestForm userId={user.id} />
+              )}
 
               <div className="mt-8">
                 <p className="mb-3 text-sm font-medium text-slate-300">Your deposit requests</p>
