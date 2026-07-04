@@ -12,6 +12,7 @@ import {
   type AdminProperty,
 } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
+import { EmptyState } from "@/components/empty-state";
 import { DeletePropertyButton } from "@/components/admin/delete-property-button";
 import { InvestmentRequests } from "@/components/admin/investment-requests";
 import { DepositRequests } from "@/components/admin/deposit-requests";
@@ -145,12 +146,11 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             {properties.length === 0 ? (
-              <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">No properties yet.</p>
-                <p className="mt-3 text-sm text-slate-500">
-                  Create your first property to start building the catalog.
-                </p>
-              </div>
+              <EmptyState
+                className="min-h-[220px]"
+                title="No properties yet."
+                description="Create your first property to start building the catalog."
+              />
             ) : (
               <div className="flex flex-col gap-4">
                 {properties.map((property) => (

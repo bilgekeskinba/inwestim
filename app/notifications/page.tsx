@@ -8,6 +8,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -47,12 +48,11 @@ export default async function NotificationsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex min-h-[200px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">No notifications yet.</p>
-                <p className="mt-3 text-sm text-slate-500">
-                  We&apos;ll let you know when something needs your attention.
-                </p>
-              </div>
+              <EmptyState
+                className="min-h-[200px]"
+                title="No notifications yet."
+                description="We'll let you know when something needs your attention."
+              />
             </CardContent>
           </Card>
         </div>

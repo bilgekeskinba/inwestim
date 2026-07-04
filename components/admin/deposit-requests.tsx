@@ -8,6 +8,7 @@ import type { AdminDeposit } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
   const router = useRouter();
@@ -84,12 +85,10 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
 
   if (deposits.length === 0) {
     return (
-      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-        <p className="text-base font-medium text-slate-300">No pending deposits.</p>
-        <p className="mt-3 text-sm text-slate-500">
-          New deposit requests will appear here for review.
-        </p>
-      </div>
+      <EmptyState
+        title="No pending deposits."
+        description="New deposit requests will appear here for review."
+      />
     );
   }
 

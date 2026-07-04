@@ -8,6 +8,7 @@ import type { AdminDistributionCycle } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 
 export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[] }) {
   const router = useRouter();
@@ -122,12 +123,10 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
 
   if (cycles.length === 0) {
     return (
-      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-        <p className="text-base font-medium text-slate-300">No distribution cycles yet.</p>
-        <p className="mt-3 text-sm text-slate-500">
-          Create a cycle above to calculate and record payouts.
-        </p>
-      </div>
+      <EmptyState
+        title="No distribution cycles yet."
+        description="Create a cycle above to calculate and record payouts."
+      />
     );
   }
 

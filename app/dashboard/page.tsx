@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -494,14 +495,11 @@ export default async function DashboardPage() {
                   </p>
                 </div>
               ) : (
-                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                  <p className="text-base font-medium text-slate-300">
-                    You haven't made any investments yet.
-                  </p>
-                  <p className="mt-3 text-sm text-slate-500">
-                    Browse curated property opportunities and make your first allocation.
-                  </p>
-                </div>
+                <EmptyState
+                  className="min-h-[220px]"
+                  title="You haven't made any investments yet."
+                  description="Browse curated property opportunities and make your first allocation."
+                />
               )}
             </CardContent>
           </Card>
@@ -550,14 +548,10 @@ export default async function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">
-                  No active positions yet.
-                </p>
-                <p className="mt-3 text-sm text-slate-500">
-                  Approved investments will appear here, grouped by property.
-                </p>
-              </div>
+              <EmptyState
+                title="No active positions yet."
+                description="Approved investments will appear here, grouped by property."
+              />
             )}
           </CardContent>
         </Card>
@@ -605,14 +599,10 @@ export default async function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">
-                  No distributions yet.
-                </p>
-                <p className="mt-3 text-sm text-slate-500">
-                  Once your positions earn rental income, distributions will appear here.
-                </p>
-              </div>
+              <EmptyState
+                title="No distributions yet."
+                description="Once your positions earn rental income, distributions will appear here."
+              />
             )}
           </CardContent>
         </Card>

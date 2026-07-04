@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AdminInvestment } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
+import { EmptyState } from "@/components/empty-state";
 
 export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }) {
   const router = useRouter();
@@ -131,12 +132,10 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
 
   if (requests.length === 0) {
     return (
-      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-        <p className="text-base font-medium text-slate-300">No pending requests.</p>
-        <p className="mt-3 text-sm text-slate-500">
-          New investment requests will appear here for review.
-        </p>
-      </div>
+      <EmptyState
+        title="No pending requests."
+        description="New investment requests will appear here for review."
+      />
     );
   }
 

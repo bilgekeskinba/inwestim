@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { requireAdmin, getAdminProperty } from "@/lib/admin";
 import { PropertyForm, type PropertyFormValues } from "@/components/admin/property-form";
+import { EmptyState } from "@/components/empty-state";
 
 export const metadata: Metadata = {
   title: "Edit property | Inwestim Admin",
@@ -48,12 +49,11 @@ export default async function EditPropertyPage({
                 initialValues={property as PropertyFormValues}
               />
             ) : (
-              <div className="flex min-h-[180px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-10 text-center">
-                <p className="text-base font-medium text-slate-300">Property not found.</p>
-                <p className="mt-3 text-sm text-slate-500">
-                  It may have been removed, or you don&apos;t have access to it.
-                </p>
-              </div>
+              <EmptyState
+                className="min-h-[180px]"
+                title="Property not found."
+                description="It may have been removed, or you don't have access to it."
+              />
             )}
           </CardContent>
         </Card>
