@@ -13,6 +13,7 @@ import { ExternalWallet } from "@/components/external-wallet";
 import { DepositRequestForm } from "@/components/deposit-request-form";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
+import { StatusBadge } from "@/components/status-badge";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -29,12 +30,6 @@ function formatSignedUSDC(amount: number, direction: string): string {
   const sign = direction === "debit" ? "-" : "+";
   return `${sign}${formatUSDC(Number(amount) || 0)}`;
 }
-
-const txStatusClass: Record<string, string> = {
-  completed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
-};
 
 const depositStatusClass: Record<string, string> = {
   pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
@@ -246,13 +241,7 @@ export default async function WalletPage() {
                           <span className="text-base font-medium capitalize text-white">
                             {String(tx.type)}
                           </span>
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
-                              txStatusClass[String(tx.status)] ?? txStatusClass.pending
-                            }`}
-                          >
-                            {String(tx.status)}
-                          </span>
+                          <StatusBadge status={String(tx.status)} />
                         </div>
                         <p className="mt-1 text-xs text-slate-500">
                           {formatDate((tx.created_at as string | null) ?? null)}

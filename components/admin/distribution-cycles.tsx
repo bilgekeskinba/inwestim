@@ -7,14 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AdminDistributionCycle } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
-
-const statusBadgeClass: Record<string, string> = {
-  draft: "border-slate-400/30 bg-slate-400/10 text-slate-300",
-  calculated: "border-sky-400/30 bg-sky-400/10 text-sky-300",
-  approved: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  paid: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  cancelled: "border-rose-400/30 bg-rose-400/10 text-rose-300",
-};
+import { StatusBadge } from "@/components/status-badge";
 
 export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[] }) {
   const router = useRouter();
@@ -151,13 +144,7 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium capitalize text-slate-300">
                 {cycle.distributionType}
               </span>
-              <span
-                className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
-                  statusBadgeClass[cycle.status] ?? statusBadgeClass.draft
-                }`}
-              >
-                {cycle.status}
-              </span>
+              <StatusBadge status={cycle.status} />
             </div>
             <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-400">
               <span>

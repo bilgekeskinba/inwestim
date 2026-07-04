@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AdminDeposit } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
+import { StatusBadge } from "@/components/status-badge";
 
 export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
   const router = useRouter();
@@ -107,9 +108,7 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
               <span className="text-xs text-slate-400">
                 {deposit.asset} · {deposit.chain ?? "—"}
               </span>
-              <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium capitalize text-amber-300">
-                {deposit.status}
-              </span>
+              <StatusBadge status={deposit.status} />
             </div>
             <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-400">
               <span>

@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction }
 import { AppShell } from "@/components/app-shell";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
+import { StatusBadge } from "@/components/status-badge";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -362,13 +363,6 @@ async function getDistributionHistory(
   }
 }
 
-const distributionStatusClass: Record<string, string> = {
-  pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  paid: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
-  cancelled: "border-slate-400/30 bg-slate-400/10 text-slate-300",
-};
-
 export default async function DashboardPage() {
   const { supabase, userId, email, displayName } = await getDashboardUser();
 
@@ -474,9 +468,7 @@ export default async function DashboardPage() {
                         <span className="text-base font-semibold text-white">
                           {formatUSDC(investment.amount)}
                         </span>
-                        <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-medium capitalize text-amber-300">
-                          {investment.status}
-                        </span>
+                        <StatusBadge status={investment.status} />
                       </div>
                     </div>
                   ))}
@@ -592,14 +584,7 @@ export default async function DashboardPage() {
                         <p className="truncate text-base font-medium text-white">
                           {distribution.propertyTitle}
                         </p>
-                        <span
-                          className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
-                            distributionStatusClass[distribution.status] ??
-                            distributionStatusClass.pending
-                          }`}
-                        >
-                          {distribution.status}
-                        </span>
+                        <StatusBadge status={distribution.status} />
                       </div>
                       <p className="mt-1 text-xs text-slate-500">
                         {formatPeriod(distribution.periodStart, distribution.periodEnd)}
