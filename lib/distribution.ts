@@ -1,3 +1,12 @@
+import type { InvestmentLot } from "@/types/investment";
+import type {
+  DistributionType,
+  DistributionCalculationRow,
+  RentalDistributionRow,
+  ProrataInput,
+  ProrataResult,
+} from "@/types/distribution";
+
 /**
  * Distribution engine — pro-rata distribution math (Sprint 3A, revised).
  *
@@ -26,66 +35,14 @@
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
-export type DistributionType =
-  | "rental"
-  | "capital_gain"
-  | "bonus"
-  | "referral"
-  | "cashback";
-
-export type InvestmentLot = {
-  id: string;
-  user_id: string;
-  property_id: string;
-  amount: number;
-  /** When the lot became eligible (approved_at + 1 day). */
-  eligible_from: string | Date | null;
-  /** When the lot was exited/closed; null for active lots. */
-  closed_at?: string | Date | null;
-};
-
-/** Audit row for `distribution_calculations` — explains one lot's payout. */
-export type DistributionCalculationRow = {
-  distribution_cycle_id: string | null;
-  investment_id: string;
-  user_id: string;
-  property_id: string;
-  investment_amount: number;
-  eligible_days: number;
-  weighted_amount: number;
-  total_weighted_amount: number;
-  ownership_weight: number;
-  calculated_amount: number;
-};
-
-/** User-facing payout row for `rental_distributions`. */
-export type RentalDistributionRow = {
-  distribution_cycle_id: string | null;
-  /** Filled by the insert layer after the calculation row is persisted. */
-  distribution_calculation_id: string | null;
-  investment_id: string;
-  user_id: string;
-  property_id: string;
-  amount: number;
-  eligible_days: number;
-  status: "pending";
-  period_start: string;
-  period_end: string;
-};
-
-export type ProrataInput = {
-  investments: InvestmentLot[];
-  periodStart: string | Date;
-  periodEnd: string | Date;
-  netDistribution: number;
-  /** Optional cycle id to stamp into the emitted rows. */
-  distributionCycleId?: string | null;
-};
-
-export type ProrataResult = {
-  calculations: DistributionCalculationRow[];
-  payouts: RentalDistributionRow[];
-  totalWeightedAmount: number;
+// Re-exported so existing `@/lib/distribution` type imports keep working.
+export type {
+  InvestmentLot,
+  DistributionType,
+  DistributionCalculationRow,
+  RentalDistributionRow,
+  ProrataInput,
+  ProrataResult,
 };
 
 function toDate(value: string | Date | null | undefined): Date | null {

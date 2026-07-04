@@ -1,5 +1,12 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import type { AdminProperty } from "@/types/property";
+import type { AdminInvestment } from "@/types/investment";
+import type { AdminDistributionCycle } from "@/types/distribution";
+import type { AdminDeposit } from "@/types/wallet";
+
+// Re-exported so existing `@/lib/admin` type imports keep working.
+export type { AdminProperty, AdminInvestment, AdminDistributionCycle, AdminDeposit };
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -9,23 +16,6 @@ export function adminDevError(scope: string, error: unknown) {
     console.error(`[admin] ${scope}`, error);
   }
 }
-
-// Raw shape of a row in the public.properties table.
-export type AdminProperty = {
-  id: string;
-  title: string;
-  location: string;
-  description: string;
-  image_url: string;
-  total_value: number;
-  minimum_investment: number;
-  expected_annual_return: number;
-  monthly_rental_income: number;
-  funding_percentage: number;
-  risk_level: string;
-  status: string;
-  created_at?: string;
-};
 
 export const PROPERTY_STATUSES = ["draft", "live", "funded", "exited"] as const;
 export const RISK_LEVELS = ["low", "medium", "high"] as const;
@@ -116,18 +106,6 @@ export function deriveAdminStats(properties: AdminProperty[]): AdminStats {
   };
 }
 
-export type AdminInvestment = {
-  id: string;
-  userId: string;
-  amount: number;
-  status: string;
-  created_at: string | null;
-  propertyId: string;
-  propertyTitle: string;
-  propertyTotalValue: number;
-  userEmail: string | null;
-};
-
 /**
  * Lists pending investment requests for the admin panel, enriched with the
  * property title and (when readable) the investor's email. Soft-fails to an
@@ -193,17 +171,6 @@ export async function getPendingInvestments(
     return [];
   }
 }
-
-export type AdminDistributionCycle = {
-  id: string;
-  propertyTitle: string;
-  distributionType: string;
-  periodStart: string | null;
-  periodEnd: string | null;
-  netDistribution: number;
-  status: string;
-  createdAt: string | null;
-};
 
 /**
  * Lists distribution cycles for the admin panel, enriched with property titles.
@@ -277,18 +244,6 @@ export async function getLegacyApprovedCount(
     return 0;
   }
 }
-
-export type AdminDeposit = {
-  id: string;
-  userId: string;
-  userEmail: string | null;
-  amount: number;
-  asset: string;
-  walletAddress: string | null;
-  chain: string | null;
-  status: string;
-  createdAt: string | null;
-};
 
 /**
  * Lists pending deposit requests for the admin panel, enriched with the

@@ -35,3 +35,36 @@ export interface Property {
   fundedDate?: string;
   exitDate?: string;
 }
+
+/** Raw properties row as used by the admin panel (DB column names). */
+export type AdminProperty = {
+  id: string;
+  title: string;
+  location: string;
+  description: string;
+  image_url: string;
+  total_value: number;
+  minimum_investment: number;
+  expected_annual_return: number;
+  monthly_rental_income: number;
+  funding_percentage: number;
+  risk_level: string;
+  status: string;
+  created_at?: string;
+};
+
+/** Public-facing single property (live only), read straight from DB columns. */
+export type LivePropertyDetail = {
+  id: string;
+  title: string;
+  location: string;
+  description: string;
+  image_url: string;
+  total_value: number;
+  minimum_investment: number;
+  expected_annual_return: number;
+  monthly_rental_income: number;
+  funding_percentage: number;
+  risk_level: string;
+  status: string;
+};

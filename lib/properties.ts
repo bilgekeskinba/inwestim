@@ -1,5 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Property } from "@/types/property";
+import type { LivePropertyDetail } from "@/types/property";
+
+// Re-exported so existing `@/lib/properties` type imports keep working.
+export type { LivePropertyDetail };
 
 // DB stores risk_level lowercase (low/medium/high); the Property type and the
 // card UI expect "Low" | "Medium" | "High".
@@ -54,22 +58,6 @@ function mapPropertyRow(row: Record<string, unknown>): Property {
         : undefined,
   };
 }
-
-// Raw public-facing shape, read straight from the real properties columns.
-export type LivePropertyDetail = {
-  id: string;
-  title: string;
-  location: string;
-  description: string;
-  image_url: string;
-  total_value: number;
-  minimum_investment: number;
-  expected_annual_return: number;
-  monthly_rental_income: number;
-  funding_percentage: number;
-  risk_level: string;
-  status: string;
-};
 
 const PUBLIC_DETAIL_COLUMNS =
   "id, title, location, description, image_url, total_value, minimum_investment, expected_annual_return, monthly_rental_income, funding_percentage, risk_level, status";
