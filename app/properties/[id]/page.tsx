@@ -7,15 +7,12 @@ import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { InvestmentModal } from "@/components/investment-modal";
 import { getLivePropertyById, type LivePropertyDetail } from "@/lib/properties";
+import { formatUSDC } from "@/lib/format/currency";
 
 export const metadata: Metadata = {
   title: "Property | Inwestim",
   description: "Explore this Inwestim property investment opportunity.",
 };
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
 
 const riskBadgeClass: Record<string, string> = {
   low: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",

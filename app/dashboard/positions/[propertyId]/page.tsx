@@ -9,16 +9,13 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { formatUSDC } from "@/lib/format/currency";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "Position | Inwestim",
   description: "Details for your investment position.",
 };
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
 
 function formatDate(value: string | null): string {
   if (!value) return "—";

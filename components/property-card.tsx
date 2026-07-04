@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Property } from "@/types/property";
 import { Button } from "@/components/ui/button";
+import { formatUSDC } from "@/lib/format/currency";
 
 /**
  * Property Card Component
@@ -19,14 +20,6 @@ import { Button } from "@/components/ui/button";
 
 interface PropertyCardProps {
   property: Property;
-}
-
-function formatCurrency(amount: number): string {
-  return `${(Number(amount) || 0).toLocaleString("en-US")} USDC`;
-}
-
-function formatFullCurrency(amount: number): string {
-  return `${(Number(amount) || 0).toLocaleString("en-US")} USDC`;
 }
 
 function formatDate(dateString: string): string {
@@ -174,12 +167,12 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </div>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {formatFullCurrency(
+                {formatUSDC(
                   (property.offeringAmount * property.fundingProgress) / 100
                 )}{" "}
                 raised
               </span>
-              <span>Goal: {formatFullCurrency(property.offeringAmount)}</span>
+              <span>Goal: {formatUSDC(property.offeringAmount)}</span>
             </div>
           </div>
         )}
@@ -191,7 +184,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
               {property.status === "exited" ? "Exit Price" : "Target Raise"}
             </p>
             <p className="mt-1 text-lg font-bold text-foreground tracking-tight">
-              {formatCurrency(
+              {formatUSDC(
                 property.status === "exited"
                   ? property.exitPrice || 0
                   : property.offeringAmount
@@ -203,7 +196,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
               Min. Investment
             </p>
             <p className="mt-1 text-lg font-bold text-foreground tracking-tight">
-              {formatCurrency(property.minimumEntry)}
+              {formatUSDC(property.minimumEntry)}
             </p>
           </div>
         </div>

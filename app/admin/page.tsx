@@ -11,6 +11,7 @@ import {
   getLegacyApprovedCount,
   type AdminProperty,
 } from "@/lib/admin";
+import { formatUSDC } from "@/lib/format/currency";
 import { DeletePropertyButton } from "@/components/admin/delete-property-button";
 import { InvestmentRequests } from "@/components/admin/investment-requests";
 import { DepositRequests } from "@/components/admin/deposit-requests";
@@ -22,10 +23,6 @@ export const metadata: Metadata = {
   title: "Admin | Inwestim",
   description: "Manage Inwestim property listings.",
 };
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
 
 const statusBadgeClass: Record<string, string> = {
   live: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",

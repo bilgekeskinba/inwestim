@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AdminInvestment } from "@/lib/admin";
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
+import { formatUSDC } from "@/lib/format/currency";
 
 function formatDate(value: string | null): string {
   if (!value) return "";

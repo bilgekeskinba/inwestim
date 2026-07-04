@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowUpRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { formatUSDC } from "@/lib/format/currency";
 
 type Props = {
   propertyId: string;
@@ -13,10 +14,6 @@ type Props = {
   totalValue: number;
   fundingPercentage: number;
 };
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
 
 const inputClass =
   "w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-[15px] text-white shadow-sm placeholder:text-slate-500 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";

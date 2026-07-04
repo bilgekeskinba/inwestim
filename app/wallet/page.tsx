@@ -11,16 +11,13 @@ import { AppShell } from "@/components/app-shell";
 import { Web3Provider } from "@/components/web3-provider";
 import { ExternalWallet } from "@/components/external-wallet";
 import { DepositRequestForm } from "@/components/deposit-request-form";
+import { formatUSDC } from "@/lib/format/currency";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "Wallet | Inwestim",
   description: "Your Inwestim account balance and connected wallet.",
 };
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
 
 function sumAmounts(rows: { amount: number | string | null }[] | null): number {
   if (!rows) return 0;

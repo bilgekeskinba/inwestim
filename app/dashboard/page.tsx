@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { formatUSDC } from "@/lib/format/currency";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -171,10 +172,6 @@ async function getDashboardMetrics(
     devError("metrics query error", error);
     return EMPTY_METRICS;
   }
-}
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
 }
 
 function formatDate(value: string | null): string {

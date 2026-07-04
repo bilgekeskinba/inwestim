@@ -8,6 +8,7 @@ import {
   calculateProrataDistribution,
   type InvestmentLot,
 } from "@/lib/distribution";
+import { formatUSDC } from "@/lib/format/currency";
 
 type PropertyOption = { id: string; title: string };
 
@@ -22,10 +23,6 @@ const DISTRIBUTION_TYPES = [
 const inputClass =
   "w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-[15px] text-white shadow-sm placeholder:text-slate-500 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
 const labelClass = "text-sm font-medium text-slate-300";
-
-function formatUSDC(value: number): string {
-  return `${(Number(value) || 0).toLocaleString("en-US")} USDC`;
-}
 
 function devError(scope: string, error: unknown) {
   if (process.env.NODE_ENV !== "production") {
