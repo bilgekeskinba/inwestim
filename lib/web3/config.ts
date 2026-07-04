@@ -2,15 +2,14 @@ import { cookieStorage, createStorage } from "wagmi";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { polygon, polygonAmoy } from "@reown/appkit/networks";
 import type { AppKitNetwork } from "@reown/appkit/networks";
+import { REOWN_PROJECT_ID } from "@/lib/env";
 
 // Reown (WalletConnect v2) project id. Set NEXT_PUBLIC_REOWN_PROJECT_ID from
 // https://dashboard.reown.com. A non-empty fallback keeps the adapter from
 // throwing at load; the UI surfaces a notice when the real id is missing.
-export const projectId =
-  process.env.NEXT_PUBLIC_REOWN_PROJECT_ID || "REPLACE_WITH_REOWN_PROJECT_ID";
+export const projectId = REOWN_PROJECT_ID || "REPLACE_WITH_REOWN_PROJECT_ID";
 
-export const isProjectConfigured =
-  Boolean(process.env.NEXT_PUBLIC_REOWN_PROJECT_ID);
+export const isProjectConfigured = Boolean(REOWN_PROJECT_ID);
 
 // Dev: Polygon Amoy. Prod: Polygon Mainnet. Only Polygon is supported.
 export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [polygon, polygonAmoy];

@@ -21,6 +21,7 @@ import {
   WALLET_TX_STATUS,
 } from "@/lib/constants/status";
 import { WALLET_DIRECTION } from "@/lib/constants/wallet";
+import { WALLETCONNECT_ENABLED } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -107,8 +108,7 @@ export default async function WalletPage() {
 
   // WalletConnect is gated until deposits exist, to avoid confusing external
   // wallet balance with the separate Inwestim platform balance.
-  const walletConnectEnabled =
-    process.env.NEXT_PUBLIC_ENABLE_WALLETCONNECT === "true";
+  const walletConnectEnabled = WALLETCONNECT_ENABLED;
 
   return (
     <AppShell>
