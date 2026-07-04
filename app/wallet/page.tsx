@@ -10,6 +10,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { Web3Provider } from "@/components/web3-provider";
 import { ExternalWallet } from "@/components/external-wallet";
+import { DepositRequestForm } from "@/components/deposit-request-form";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -44,6 +45,14 @@ const txStatusClass: Record<string, string> = {
   failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
 };
 
+const depositStatusClass: Record<string, string> = {
+  pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+  confirming: "border-sky-400/30 bg-sky-400/10 text-sky-300",
+  completed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+  failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
+  cancelled: "border-slate-400/30 bg-slate-400/10 text-slate-300",
+};
+
 function BalanceCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
@@ -63,7 +72,7 @@ export default async function WalletPage() {
     redirect("/sign-in");
   }
 
-  const [approved, paid, ledger] = await Promise.all([
+  const [approved, paid, ledger, depositRows] = await Promise.all([
     supabase
       .from("investments")
       .select("amount")
@@ -80,12 +89,18 @@ export default async function WalletPage() {
       .select("id, type, direction, amount, status, description, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("deposit_requests")
+      .select("id, amount, asset, chain, status, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const totalInvested = approved.error ? 0 : sumAmounts(approved.data);
   const lifetimeDistributions = paid.error ? 0 : sumAmounts(paid.data);
 
   const transactions = ledger.error ? [] : ledger.data ?? [];
+  const deposits = depositRows.error ? [] : depositRows.data ?? [];
 
   // Available Balance = sum(completed credits) − sum(completed debits).
   // Pending Balance = the same over pending transactions.
@@ -164,6 +179,58 @@ export default async function WalletPage() {
                   </p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Deposits */}
+          <Card className="mb-8 rounded-3xl border-white/10 bg-slate-900/90">
+            <CardHeader>
+              <div>
+                <CardTitle>Deposits</CardTitle>
+                <CardDescription>
+                  Request a deposit; an admin confirms it before it credits your balance.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DepositRequestForm userId={user.id} />
+
+              <div className="mt-8">
+                <p className="mb-3 text-sm font-medium text-slate-300">Your deposit requests</p>
+                {deposits.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {deposits.map((deposit) => (
+                      <div
+                        key={String(deposit.id)}
+                        className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-base font-semibold text-white">
+                            {formatUSDC(Number(deposit.amount) || 0)}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {String(deposit.asset)} · {String(deposit.chain)}
+                          </span>
+                          <span
+                            className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
+                              depositStatusClass[String(deposit.status)] ?? depositStatusClass.pending
+                            }`}
+                          >
+                            {String(deposit.status)}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {formatDate((deposit.created_at as string | null) ?? null)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-[120px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-8 text-center">
+                    <p className="text-sm text-slate-400">No deposit requests yet.</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 

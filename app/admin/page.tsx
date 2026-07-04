@@ -6,12 +6,14 @@ import {
   getAdminProperties,
   deriveAdminStats,
   getPendingInvestments,
+  getPendingDeposits,
   getDistributionCycles,
   getLegacyApprovedCount,
   type AdminProperty,
 } from "@/lib/admin";
 import { DeletePropertyButton } from "@/components/admin/delete-property-button";
 import { InvestmentRequests } from "@/components/admin/investment-requests";
+import { DepositRequests } from "@/components/admin/deposit-requests";
 import { DistributionCycleForm } from "@/components/admin/distribution-cycle-form";
 import { DistributionCycles } from "@/components/admin/distribution-cycles";
 import { DataMaintenance } from "@/components/admin/data-maintenance";
@@ -96,6 +98,7 @@ export default async function AdminPage() {
   const properties = await getAdminProperties(supabase);
   const stats = deriveAdminStats(properties);
   const pendingRequests = await getPendingInvestments(supabase);
+  const pendingDeposits = await getPendingDeposits(supabase);
   const distributionCycles = await getDistributionCycles(supabase);
   const legacyApprovedCount = await getLegacyApprovedCount(supabase);
 
@@ -170,6 +173,18 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <InvestmentRequests requests={pendingRequests} />
+          </CardContent>
+        </Card>
+
+        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
+          <CardHeader>
+            <div>
+              <CardTitle>Pending deposits</CardTitle>
+              <CardDescription>Deposit requests awaiting confirmation.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <DepositRequests deposits={pendingDeposits} />
           </CardContent>
         </Card>
 

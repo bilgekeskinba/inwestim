@@ -278,6 +278,65 @@ export async function getLegacyApprovedCount(
   }
 }
 
+export type AdminDeposit = {
+  id: string;
+  userId: string;
+  userEmail: string | null;
+  amount: number;
+  asset: string;
+  walletAddress: string | null;
+  chain: string | null;
+  status: string;
+  createdAt: string | null;
+};
+
+/**
+ * Lists pending deposit requests for the admin panel, enriched with the
+ * requester's email. Soft-fails to an empty array.
+ */
+export async function getPendingDeposits(
+  supabase: SupabaseServerClient
+): Promise<AdminDeposit[]> {
+  try {
+    const { data, error } = await supabase
+      .from("deposit_requests")
+      .select("id, user_id, wallet_address, chain, asset, amount, status, created_at")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      adminDevError("pending deposits query failed", error);
+      return [];
+    }
+
+    const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))];
+    const emails = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profs, error: profsError } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      if (profsError) adminDevError("deposit email lookup failed", profsError);
+      profs?.forEach((p) => emails.set(String(p.id), p.email ? String(p.email) : null));
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      userId: String(row.user_id ?? ""),
+      userEmail: emails.get(String(row.user_id)) ?? null,
+      amount: Number(row.amount) || 0,
+      asset: String(row.asset ?? "USDC"),
+      walletAddress: (row.wallet_address as string | null) ?? null,
+      chain: (row.chain as string | null) ?? null,
+      status: String(row.status),
+      createdAt: (row.created_at as string | null) ?? null,
+    }));
+  } catch (error) {
+    adminDevError("pending deposits error", error);
+    return [];
+  }
+}
+
 /**
  * Loads a single property by id for the edit page. Returns null when missing or
  * on error so the caller can render a not-found state.
