@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AdminDeposit } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
-}
+import { formatDate } from "@/lib/format/date";
 
 export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
   const router = useRouter();

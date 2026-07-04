@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
 import { formatUSDC } from "@/lib/format/currency";
+import { formatDate, formatPeriod } from "@/lib/format/date";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -172,13 +173,6 @@ async function getDashboardMetrics(
     devError("metrics query error", error);
     return EMPTY_METRICS;
   }
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 }
 
 type PendingInvestment = {
@@ -608,7 +602,7 @@ export default async function DashboardPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-slate-500">
-                        {formatDate(distribution.periodStart)} – {formatDate(distribution.periodEnd)}
+                        {formatPeriod(distribution.periodStart, distribution.periodEnd)}
                         {distribution.eligibleDays != null
                           ? ` · ${distribution.eligibleDays} eligible ${
                               distribution.eligibleDays === 1 ? "day" : "days"

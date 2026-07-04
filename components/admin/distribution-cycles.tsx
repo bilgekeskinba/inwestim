@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { AdminDistributionCycle } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
-}
+import { formatDate, formatPeriod } from "@/lib/format/date";
 
 const statusBadgeClass: Record<string, string> = {
   draft: "border-slate-400/30 bg-slate-400/10 text-slate-300",
@@ -169,7 +163,7 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
               <span>
                 Period:{" "}
                 <span className="text-slate-200">
-                  {formatDate(cycle.periodStart)} – {formatDate(cycle.periodEnd)}
+                  {formatPeriod(cycle.periodStart, cycle.periodEnd)}
                 </span>
               </span>
               <span>

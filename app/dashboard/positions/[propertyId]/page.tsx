@@ -10,19 +10,13 @@ import {
 } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
 import { formatUSDC } from "@/lib/format/currency";
+import { formatDate, formatPeriod } from "@/lib/format/date";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "Position | Inwestim",
   description: "Details for your investment position.",
 };
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
-}
 
 const distributionStatusClass: Record<string, string> = {
   pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
@@ -242,8 +236,10 @@ export default async function PositionDetailPage({
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {formatDate((distribution.period_start as string | null) ?? null)} –{" "}
-                      {formatDate((distribution.period_end as string | null) ?? null)}
+                      {formatPeriod(
+                        (distribution.period_start as string | null) ?? null,
+                        (distribution.period_end as string | null) ?? null
+                      )}
                       {distribution.eligible_days != null
                         ? ` · ${Number(distribution.eligible_days)} eligible ${
                             Number(distribution.eligible_days) === 1 ? "day" : "days"

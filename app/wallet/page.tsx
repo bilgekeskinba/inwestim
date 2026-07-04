@@ -12,6 +12,7 @@ import { Web3Provider } from "@/components/web3-provider";
 import { ExternalWallet } from "@/components/external-wallet";
 import { DepositRequestForm } from "@/components/deposit-request-form";
 import { formatUSDC } from "@/lib/format/currency";
+import { formatDate } from "@/lib/format/date";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -22,13 +23,6 @@ export const metadata: Metadata = {
 function sumAmounts(rows: { amount: number | string | null }[] | null): number {
   if (!rows) return 0;
   return rows.reduce((total, row) => total + (Number(row.amount) || 0), 0);
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatSignedUSDC(amount: number, direction: string): string {
