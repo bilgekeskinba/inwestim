@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { AppSectionCard } from "@/components/app-section-card";
+import { AppSectionHeader } from "@/components/app-section-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
@@ -40,13 +36,11 @@ export default async function NotificationsPage() {
             </p>
           </div>
 
-          <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Recent activity</CardTitle>
-                <CardDescription>Investment approvals, payouts, and announcements.</CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard>
+            <AppSectionHeader
+              title="Recent activity"
+              description="Investment approvals, payouts, and announcements."
+            />
             <CardContent>
               <EmptyState
                 className="min-h-[200px]"
@@ -54,7 +48,7 @@ export default async function NotificationsPage() {
                 description="We'll let you know when something needs your attention."
               />
             </CardContent>
-          </Card>
+          </AppSectionCard>
         </div>
       </main>
     </AppShell>

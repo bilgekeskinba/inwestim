@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { AppSectionCard } from "@/components/app-section-card";
+import { AppSectionHeader } from "@/components/app-section-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
@@ -40,13 +36,11 @@ export default async function SettingsPage() {
             </p>
           </div>
 
-          <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Preferences</CardTitle>
-                <CardDescription>Security, notifications, and account options.</CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard>
+            <AppSectionHeader
+              title="Preferences"
+              description="Security, notifications, and account options."
+            />
             <CardContent>
               <EmptyState
                 className="min-h-[200px]"
@@ -54,7 +48,7 @@ export default async function SettingsPage() {
                 description="Preferences and account controls will live here."
               />
             </CardContent>
-          </Card>
+          </AppSectionCard>
         </div>
       </main>
     </AppShell>

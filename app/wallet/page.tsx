@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { AppSectionCard } from "@/components/app-section-card";
+import { AppSectionHeader } from "@/components/app-section-header";
 import { Web3Provider } from "@/components/web3-provider";
 import { ExternalWallet } from "@/components/external-wallet";
 import { DepositRequestForm } from "@/components/deposit-request-form";
@@ -125,15 +121,11 @@ export default async function WalletPage() {
           </div>
 
           {/* Inwestim Account */}
-          <Card className="mb-8 rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Inwestim Account</CardTitle>
-                <CardDescription>
-                  Your platform balance used for investments and distributions.
-                </CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard className="mb-8">
+            <AppSectionHeader
+              title="Inwestim Account"
+              description="Your platform balance used for investments and distributions."
+            />
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <BalanceCard label="Available Balance" value={formatUSDC(availableBalance)} />
@@ -145,20 +137,18 @@ export default async function WalletPage() {
                 />
               </div>
             </CardContent>
-          </Card>
+          </AppSectionCard>
 
           {/* External Wallet (read-only identity via WalletConnect, feature-flagged) */}
-          <Card className="mb-8 rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>External Wallet</CardTitle>
-                <CardDescription>
-                  {walletConnectEnabled
-                    ? "Connect a Polygon wallet as your identity. Read-only — no funds move."
-                    : "Link an external wallet to your account."}
-                </CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard className="mb-8">
+            <AppSectionHeader
+              title="External Wallet"
+              description={
+                walletConnectEnabled
+                  ? "Connect a Polygon wallet as your identity. Read-only — no funds move."
+                  : "Link an external wallet to your account."
+              }
+            />
             <CardContent>
               {walletConnectEnabled ? (
                 <Web3Provider>
@@ -173,18 +163,14 @@ export default async function WalletPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </AppSectionCard>
 
           {/* Deposits */}
-          <Card className="mb-8 rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Deposits</CardTitle>
-                <CardDescription>
-                  Request a deposit; an admin confirms it before it credits your balance.
-                </CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard className="mb-8">
+            <AppSectionHeader
+              title="Deposits"
+              description="Request a deposit; an admin confirms it before it credits your balance."
+            />
             <CardContent>
               <DepositRequestForm userId={user.id} />
 
@@ -225,16 +211,14 @@ export default async function WalletPage() {
                 )}
               </div>
             </CardContent>
-          </Card>
+          </AppSectionCard>
 
           {/* Transaction History */}
-          <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Transaction History</CardTitle>
-                <CardDescription>Deposits, withdrawals, and transfers.</CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard>
+            <AppSectionHeader
+              title="Transaction History"
+              description="Deposits, withdrawals, and transfers."
+            />
             <CardContent>
               {transactions.length > 0 ? (
                 <div className="flex flex-col gap-3">
@@ -272,7 +256,7 @@ export default async function WalletPage() {
                 />
               )}
             </CardContent>
-          </Card>
+          </AppSectionCard>
         </div>
       </main>
     </AppShell>

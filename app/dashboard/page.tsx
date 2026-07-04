@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { AppSectionCard } from "@/components/app-section-card";
+import { AppSectionHeader } from "@/components/app-section-header";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
@@ -401,13 +403,11 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Portfolio summary</CardTitle>
-                <CardDescription>Overview of your current account activity.</CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard>
+            <AppSectionHeader
+              title="Portfolio summary"
+              description="Overview of your current account activity."
+            />
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
@@ -428,26 +428,24 @@ export default async function DashboardPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </AppSectionCard>
 
-          <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Portfolio status</CardTitle>
-                <CardDescription>
-                  {pendingInvestments.length > 0
-                    ? "Your pending investment requests."
-                    : activePositions.length > 0
-                      ? "Your active positions at a glance."
-                      : "Start building momentum with your first investment."}
-                </CardDescription>
-              </div>
-              <CardAction>
+          <AppSectionCard>
+            <AppSectionHeader
+              title="Portfolio status"
+              description={
+                pendingInvestments.length > 0
+                  ? "Your pending investment requests."
+                  : activePositions.length > 0
+                    ? "Your active positions at a glance."
+                    : "Start building momentum with your first investment."
+              }
+              action={
                 <Button asChild variant="default" size="sm">
                   <a href="/properties">Explore Properties</a>
                 </Button>
-              </CardAction>
-            </CardHeader>
+              }
+            />
             <CardContent>
               {pendingInvestments.length > 0 ? (
                 <div className="flex flex-col gap-3">
@@ -503,18 +501,14 @@ export default async function DashboardPage() {
                 />
               )}
             </CardContent>
-          </Card>
+          </AppSectionCard>
         </div>
 
-        <Card className="mt-6 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Active Positions</CardTitle>
-              <CardDescription>
-                Your approved holdings, grouped by property.
-              </CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-6">
+          <AppSectionHeader
+            title="Active Positions"
+            description="Your approved holdings, grouped by property."
+          />
           <CardContent>
             {activePositions.length > 0 ? (
               <div className="flex flex-col gap-3">
@@ -555,17 +549,13 @@ export default async function DashboardPage() {
               />
             )}
           </CardContent>
-        </Card>
+        </AppSectionCard>
 
-        <Card className="mt-6 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Distribution History</CardTitle>
-              <CardDescription>
-                Rental distributions across your positions.
-              </CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-6">
+          <AppSectionHeader
+            title="Distribution History"
+            description="Rental distributions across your positions."
+          />
           <CardContent>
             {distributionHistory.length > 0 ? (
               <div className="flex flex-col gap-3">
@@ -606,7 +596,7 @@ export default async function DashboardPage() {
               />
             )}
           </CardContent>
-        </Card>
+        </AppSectionCard>
       </div>
     </main>
     </AppShell>

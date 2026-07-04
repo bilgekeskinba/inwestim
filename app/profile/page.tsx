@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { AppShell } from "@/components/app-shell";
+import { AppSectionCard } from "@/components/app-section-card";
+import { AppSectionHeader } from "@/components/app-section-header";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
@@ -38,13 +34,11 @@ export default async function ProfilePage() {
             <p className="mt-2 max-w-2xl text-base text-slate-300">Signed in as {user.email}.</p>
           </div>
 
-          <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-            <CardHeader>
-              <div>
-                <CardTitle>Account details</CardTitle>
-                <CardDescription>Manage your name, email, and preferences.</CardDescription>
-              </div>
-            </CardHeader>
+          <AppSectionCard>
+            <AppSectionHeader
+              title="Account details"
+              description="Manage your name, email, and preferences."
+            />
             <CardContent>
               <EmptyState
                 className="min-h-[200px]"
@@ -52,7 +46,7 @@ export default async function ProfilePage() {
                 description="You'll be able to edit your details here."
               />
             </CardContent>
-          </Card>
+          </AppSectionCard>
         </div>
       </main>
     </AppShell>

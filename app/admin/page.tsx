@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { AppSectionCard } from "@/components/app-section-card";
+import { AppSectionHeader } from "@/components/app-section-header";
 import {
   requireAdmin,
   getAdminProperties,
@@ -132,18 +134,16 @@ export default async function AdminPage() {
           <StatCard label="Funded properties" value={stats.funded} />
         </div>
 
-        <Card className="rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>All properties</CardTitle>
-              <CardDescription>Every listing in the catalog, newest first.</CardDescription>
-            </div>
-            <CardAction>
+        <AppSectionCard>
+          <AppSectionHeader
+            title="All properties"
+            description="Every listing in the catalog, newest first."
+            action={
               <Button asChild variant="default" size="sm">
                 <a href="/admin/properties/new">Add property</a>
               </Button>
-            </CardAction>
-          </CardHeader>
+            }
+          />
           <CardContent>
             {properties.length === 0 ? (
               <EmptyState
@@ -159,75 +159,59 @@ export default async function AdminPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </AppSectionCard>
 
-        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Investment requests</CardTitle>
-              <CardDescription>Pending requests awaiting your review.</CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Investment requests"
+            description="Pending requests awaiting your review."
+          />
           <CardContent>
             <InvestmentRequests requests={pendingRequests} />
           </CardContent>
-        </Card>
+        </AppSectionCard>
 
-        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Pending deposits</CardTitle>
-              <CardDescription>Deposit requests awaiting confirmation.</CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Pending deposits"
+            description="Deposit requests awaiting confirmation."
+          />
           <CardContent>
             <DepositRequests deposits={pendingDeposits} />
           </CardContent>
-        </Card>
+        </AppSectionCard>
 
-        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Create distribution cycle</CardTitle>
-              <CardDescription>
-                Calculate pro-rata payouts for a property and a period, then save the cycle.
-              </CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Create distribution cycle"
+            description="Calculate pro-rata payouts for a property and a period, then save the cycle."
+          />
           <CardContent>
             <DistributionCycleForm
               properties={properties.map((p) => ({ id: p.id, title: p.title }))}
             />
           </CardContent>
-        </Card>
+        </AppSectionCard>
 
-        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Distribution cycles</CardTitle>
-              <CardDescription>
-                Recorded cycles and their payout status. Confirm payment when funds are sent.
-              </CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Distribution cycles"
+            description="Recorded cycles and their payout status. Confirm payment when funds are sent."
+          />
           <CardContent>
             <DistributionCycles cycles={distributionCycles} />
           </CardContent>
-        </Card>
+        </AppSectionCard>
 
-        <Card className="mt-10 rounded-3xl border-white/10 bg-slate-900/90">
-          <CardHeader>
-            <div>
-              <CardTitle>Data Maintenance</CardTitle>
-              <CardDescription>
-                One-off migration tools for keeping records consistent.
-              </CardDescription>
-            </div>
-          </CardHeader>
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Data Maintenance"
+            description="One-off migration tools for keeping records consistent."
+          />
           <CardContent>
             <DataMaintenance legacyCount={legacyApprovedCount} />
           </CardContent>
-        </Card>
+        </AppSectionCard>
       </div>
     </main>
   );
