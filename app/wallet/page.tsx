@@ -15,6 +15,12 @@ import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import {
+  INVESTMENT_STATUS,
+  DISTRIBUTION_STATUS,
+  WALLET_TX_STATUS,
+} from "@/lib/constants/status";
+import { WALLET_DIRECTION } from "@/lib/constants/wallet";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -28,7 +34,7 @@ function sumAmounts(rows: { amount: number | string | null }[] | null): number {
 }
 
 function formatSignedUSDC(amount: number, direction: string): string {
-  const sign = direction === "debit" ? "-" : "+";
+  const sign = direction === WALLET_DIRECTION.DEBIT ? "-" : "+";
   return `${sign}${formatUSDC(Number(amount) || 0)}`;
 }
 
@@ -64,12 +70,12 @@ export default async function WalletPage() {
       .from("investments")
       .select("amount")
       .eq("user_id", user.id)
-      .eq("status", "approved"),
+      .eq("status", INVESTMENT_STATUS.APPROVED),
     supabase
       .from("rental_distributions")
       .select("amount")
       .eq("user_id", user.id)
-      .eq("status", "paid"),
+      .eq("status", DISTRIBUTION_STATUS.PAID),
     // Ledger-based balances + history: no stored balance, derived from txns.
     supabase
       .from("wallet_transactions")
@@ -94,9 +100,9 @@ export default async function WalletPage() {
   let availableBalance = 0;
   let pendingBalance = 0;
   for (const tx of transactions) {
-    const signed = (Number(tx.amount) || 0) * (tx.direction === "debit" ? -1 : 1);
-    if (tx.status === "completed") availableBalance += signed;
-    else if (tx.status === "pending") pendingBalance += signed;
+    const signed = (Number(tx.amount) || 0) * (tx.direction === WALLET_DIRECTION.DEBIT ? -1 : 1);
+    if (tx.status === WALLET_TX_STATUS.COMPLETED) availableBalance += signed;
+    else if (tx.status === WALLET_TX_STATUS.PENDING) pendingBalance += signed;
   }
 
   // WalletConnect is gated until deposits exist, to avoid confusing external
@@ -251,7 +257,7 @@ export default async function WalletPage() {
                       </div>
                       <span
                         className={`text-base font-semibold ${
-                          tx.direction === "debit" ? "text-rose-300" : "text-emerald-300"
+                          tx.direction === WALLET_DIRECTION.DEBIT ? "text-rose-300" : "text-emerald-300"
                         }`}
                       >
                         {formatSignedUSDC(Number(tx.amount) || 0, String(tx.direction))}

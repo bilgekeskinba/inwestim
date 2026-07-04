@@ -9,6 +9,8 @@ import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { DEPOSIT_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
+import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
 
 export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
   const router = useRouter();
@@ -24,20 +26,20 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
     const { data: existing } = await supabase
       .from("wallet_transactions")
       .select("id")
-      .eq("reference_type", "deposit_request")
+      .eq("reference_type", REFERENCE_TYPE.DEPOSIT_REQUEST)
       .eq("reference_id", deposit.id)
-      .eq("type", "deposit")
+      .eq("type", WALLET_TX_TYPE.DEPOSIT)
       .limit(1);
 
     if (existing && existing.length > 0) return;
 
     const { error } = await supabase.from("wallet_transactions").insert({
       user_id: deposit.userId,
-      type: "deposit",
-      direction: "credit",
+      type: WALLET_TX_TYPE.DEPOSIT,
+      direction: WALLET_DIRECTION.CREDIT,
       amount: deposit.amount,
-      status: "completed",
-      reference_type: "deposit_request",
+      status: WALLET_TX_STATUS.COMPLETED,
+      reference_type: REFERENCE_TYPE.DEPOSIT_REQUEST,
       reference_id: deposit.id,
       description: "Deposit approved",
     });
@@ -54,14 +56,14 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
     const now = new Date().toISOString();
 
     const update = approve
-      ? { status: "completed", confirmed_at: now }
-      : { status: "failed" };
+      ? { status: DEPOSIT_STATUS.COMPLETED, confirmed_at: now }
+      : { status: DEPOSIT_STATUS.FAILED };
 
     const { error } = await supabase
       .from("deposit_requests")
       .update(update)
       .eq("id", deposit.id)
-      .eq("status", "pending");
+      .eq("status", DEPOSIT_STATUS.PENDING);
 
     if (error) {
       setBusyId(null);

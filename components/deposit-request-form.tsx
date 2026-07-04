@@ -4,12 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { SUPPORTED_CHAINS, USDC } from "@/lib/constants/wallet";
+import { DEPOSIT_STATUS } from "@/lib/constants/status";
 
-const CHAINS = [
-  { value: "polygon", label: "Polygon" },
-  { value: "polygon-amoy", label: "Polygon Amoy" },
-];
-const ASSETS = ["USDC"];
+const CHAINS = SUPPORTED_CHAINS;
+const ASSETS = [USDC];
 
 const inputClass =
   "w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-[15px] text-white shadow-sm placeholder:text-slate-500 transition-colors focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
@@ -48,7 +47,7 @@ export function DepositRequestForm({ userId }: { userId: string }) {
       chain,
       asset,
       amount: amountNum,
-      status: "pending",
+      status: DEPOSIT_STATUS.PENDING,
     });
 
     if (insertError) {

@@ -9,6 +9,7 @@ import {
   type InvestmentLot,
 } from "@/lib/distribution";
 import { formatUSDC } from "@/lib/format/currency";
+import { INVESTMENT_STATUS, CYCLE_STATUS } from "@/lib/constants/status";
 
 type PropertyOption = { id: string; title: string };
 
@@ -90,7 +91,7 @@ export function DistributionCycleForm({ properties }: { properties: PropertyOpti
       .from("investments")
       .select("id, user_id, property_id, amount, eligible_from, closed_at")
       .eq("property_id", propertyId)
-      .eq("status", "approved");
+      .eq("status", INVESTMENT_STATUS.APPROVED);
 
     if (lotsError) {
       devError("approved lots query failed", lotsError);
@@ -124,7 +125,7 @@ export function DistributionCycleForm({ properties }: { properties: PropertyOpti
         gross_amount: grossNum,
         expenses: expensesNum,
         net_distribution: net,
-        status: "calculated",
+        status: CYCLE_STATUS.CALCULATED,
         calculated_at: new Date().toISOString(),
       })
       .select("id")

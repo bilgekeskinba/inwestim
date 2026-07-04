@@ -8,6 +8,7 @@ import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { INVESTMENT_STATUS, DISTRIBUTION_STATUS } from "@/lib/constants/status";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -137,19 +138,19 @@ async function getDashboardMetrics(
         .from("investments")
         .select("amount, property_id")
         .eq("user_id", userId)
-        .eq("status", "approved"),
+        .eq("status", INVESTMENT_STATUS.APPROVED),
       // Paid rental distributions → Monthly Rental Income (sum).
       supabase
         .from("rental_distributions")
         .select("amount")
         .eq("user_id", userId)
-        .eq("status", "paid"),
+        .eq("status", DISTRIBUTION_STATUS.PAID),
       // Pending investments → Pending Opportunities (count only).
       supabase
         .from("investments")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
-        .eq("status", "pending"),
+        .eq("status", INVESTMENT_STATUS.PENDING),
     ]);
 
     if (approved.error) devError("approved investments query failed", approved.error);
@@ -196,7 +197,7 @@ async function getPendingInvestments(
       .from("investments")
       .select("id, amount, status, created_at, property_id")
       .eq("user_id", userId)
-      .eq("status", "pending")
+      .eq("status", INVESTMENT_STATUS.PENDING)
       .order("created_at", { ascending: false });
 
     if (error || !data) {
@@ -250,7 +251,7 @@ async function getActivePositions(
       .from("investments")
       .select("amount, created_at, property_id")
       .eq("user_id", userId)
-      .eq("status", "approved");
+      .eq("status", INVESTMENT_STATUS.APPROVED);
 
     if (error || !data) {
       devError("active positions query failed", error);

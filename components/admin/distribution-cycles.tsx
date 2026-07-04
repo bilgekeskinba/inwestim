@@ -9,6 +9,8 @@ import { formatUSDC } from "@/lib/format/currency";
 import { formatDate, formatPeriod } from "@/lib/format/date";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { DISTRIBUTION_STATUS, CYCLE_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
+import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
 
 export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[] }) {
   const router = useRouter();
@@ -26,7 +28,7 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
       .from("rental_distributions")
       .select("id, user_id, amount")
       .eq("distribution_cycle_id", cycleId)
-      .eq("status", "paid");
+      .eq("status", DISTRIBUTION_STATUS.PAID);
 
     if (paidError || !paidRows || paidRows.length === 0) {
       if (paidError && process.env.NODE_ENV !== "production") {
@@ -41,7 +43,7 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
     const { data: existing } = await supabase
       .from("wallet_transactions")
       .select("reference_id")
-      .eq("reference_type", "rental_distribution")
+      .eq("reference_type", REFERENCE_TYPE.RENTAL_DISTRIBUTION)
       .in("reference_id", distributionIds);
 
     const alreadyCredited = new Set((existing ?? []).map((e) => String(e.reference_id)));
@@ -50,11 +52,11 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
       .filter((row) => !alreadyCredited.has(String(row.id)))
       .map((row) => ({
         user_id: row.user_id,
-        type: "distribution",
-        direction: "credit",
+        type: WALLET_TX_TYPE.DISTRIBUTION,
+        direction: WALLET_DIRECTION.CREDIT,
         amount: Number(row.amount) || 0,
-        status: "completed",
-        reference_type: "rental_distribution",
+        status: WALLET_TX_STATUS.COMPLETED,
+        reference_type: REFERENCE_TYPE.RENTAL_DISTRIBUTION,
         reference_id: row.id,
         description: "Rental distribution payout",
       }));
@@ -81,9 +83,9 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
     // update is scoped to status = 'pending'.)
     const { error: payoutError } = await supabase
       .from("rental_distributions")
-      .update({ status: "paid", paid_at: now })
+      .update({ status: DISTRIBUTION_STATUS.PAID, paid_at: now })
       .eq("distribution_cycle_id", cycleId)
-      .eq("status", "pending");
+      .eq("status", DISTRIBUTION_STATUS.PENDING);
 
     if (payoutError) {
       setBusyId(null);
@@ -98,7 +100,7 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
 
     const { error: cycleError } = await supabase
       .from("distribution_cycles")
-      .update({ status: "paid", paid_at: now })
+      .update({ status: CYCLE_STATUS.PAID, paid_at: now })
       .eq("id", cycleId);
 
     if (cycleError) {
@@ -163,7 +165,7 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
             </div>
           </div>
           <div className="flex flex-shrink-0 items-center gap-3">
-            {cycle.status === "calculated" ? (
+            {cycle.status === CYCLE_STATUS.CALCULATED ? (
               <Button
                 type="button"
                 size="sm"

@@ -8,6 +8,8 @@ import type { AdminInvestment } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
 import { formatDate } from "@/lib/format/date";
 import { EmptyState } from "@/components/empty-state";
+import { INVESTMENT_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
+import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
 
 export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }) {
   const router = useRouter();
@@ -27,7 +29,7 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
       .from("investments")
       .select("amount")
       .eq("property_id", propertyId)
-      .eq("status", "approved");
+      .eq("status", INVESTMENT_STATUS.APPROVED);
 
     if (error || !data) {
       if (process.env.NODE_ENV !== "production") {
@@ -61,20 +63,20 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
     const { data: existing } = await supabase
       .from("wallet_transactions")
       .select("id")
-      .eq("reference_type", "investment")
+      .eq("reference_type", REFERENCE_TYPE.INVESTMENT)
       .eq("reference_id", investment.id)
-      .eq("type", "investment")
+      .eq("type", WALLET_TX_TYPE.INVESTMENT)
       .limit(1);
 
     if (existing && existing.length > 0) return;
 
     const { error } = await supabase.from("wallet_transactions").insert({
       user_id: investment.userId,
-      type: "investment",
-      direction: "debit",
+      type: WALLET_TX_TYPE.INVESTMENT,
+      direction: WALLET_DIRECTION.DEBIT,
       amount: Number(investment.amount) || 0,
-      status: "completed",
-      reference_type: "investment",
+      status: WALLET_TX_STATUS.COMPLETED,
+      reference_type: REFERENCE_TYPE.INVESTMENT,
       reference_id: investment.id,
       description: "Investment approved",
     });
@@ -95,7 +97,7 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
     const DAY_MS = 24 * 60 * 60 * 1000;
     const now = new Date();
     const payload =
-      status === "approved"
+      status === INVESTMENT_STATUS.APPROVED
         ? {
             status,
             approved_at: now.toISOString(),
@@ -117,7 +119,7 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
     }
 
     // Only approvals affect funding / ledger; rejections leave both as-is.
-    if (status === "approved" && request) {
+    if (status === INVESTMENT_STATUS.APPROVED && request) {
       await syncFundingPercentage(
         supabase,
         request.propertyId,
