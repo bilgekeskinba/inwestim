@@ -37,6 +37,14 @@ export const DEPOSIT_STATUS = {
   CANCELLED: "cancelled",
 } as const;
 
+export const WITHDRAWAL_STATUS = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  COMPLETED: "completed",
+  FAILED: "failed",
+  CANCELLED: "cancelled",
+} as const;
+
 export const WALLET_TX_STATUS = {
   PENDING: "pending",
   COMPLETED: "completed",

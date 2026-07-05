@@ -25,4 +25,5 @@ export const REFERENCE_TYPE = {
   INVESTMENT: "investment",
   RENTAL_DISTRIBUTION: "rental_distribution",
   DEPOSIT_REQUEST: "deposit_request",
+  WITHDRAWAL_REQUEST: "withdrawal_request",
 } as const;

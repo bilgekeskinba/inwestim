@@ -3,10 +3,16 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { AdminProperty } from "@/types/property";
 import type { AdminInvestment } from "@/types/investment";
 import type { AdminDistributionCycle } from "@/types/distribution";
-import type { AdminDeposit } from "@/types/wallet";
+import type { AdminDeposit, AdminWithdrawal } from "@/types/wallet";
 
 // Re-exported so existing `@/lib/admin` type imports keep working.
-export type { AdminProperty, AdminInvestment, AdminDistributionCycle, AdminDeposit };
+export type {
+  AdminProperty,
+  AdminInvestment,
+  AdminDistributionCycle,
+  AdminDeposit,
+  AdminWithdrawal,
+};
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
@@ -307,6 +313,53 @@ export async function getPendingDeposits(
     });
   } catch (error) {
     adminDevError("pending deposits error", error);
+    return [];
+  }
+}
+
+/**
+ * Lists pending + approved withdrawal requests for the admin panel, enriched
+ * with the requester's email. Soft-fails to an empty array.
+ */
+export async function getPendingWithdrawals(
+  supabase: SupabaseServerClient
+): Promise<AdminWithdrawal[]> {
+  try {
+    const { data, error } = await supabase
+      .from("withdrawal_requests")
+      .select("id, user_id, wallet_address, chain, asset, amount, status, created_at")
+      .in("status", ["pending", "approved"])
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      adminDevError("pending withdrawals query failed", error);
+      return [];
+    }
+
+    const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))];
+    const emails = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profs, error: profsError } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      if (profsError) adminDevError("withdrawal email lookup failed", profsError);
+      profs?.forEach((p) => emails.set(String(p.id), p.email ? String(p.email) : null));
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      userId: String(row.user_id ?? ""),
+      userEmail: emails.get(String(row.user_id)) ?? null,
+      amount: Number(row.amount) || 0,
+      asset: String(row.asset ?? "USDC"),
+      walletAddress: (row.wallet_address as string | null) ?? null,
+      chain: (row.chain as string | null) ?? null,
+      status: String(row.status),
+      createdAt: (row.created_at as string | null) ?? null,
+    }));
+  } catch (error) {
+    adminDevError("pending withdrawals error", error);
     return [];
   }
 }

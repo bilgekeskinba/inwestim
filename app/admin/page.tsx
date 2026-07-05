@@ -9,6 +9,7 @@ import {
   deriveAdminStats,
   getPendingInvestments,
   getPendingDeposits,
+  getPendingWithdrawals,
   getDistributionCycles,
   getLegacyApprovedCount,
   getTreasuryOverview,
@@ -23,6 +24,7 @@ import { DistributionCycleForm } from "@/components/admin/distribution-cycle-for
 import { DistributionCycles } from "@/components/admin/distribution-cycles";
 import { DataMaintenance } from "@/components/admin/data-maintenance";
 import { TreasuryDashboard } from "@/components/admin/treasury-dashboard";
+import { WithdrawalRequests } from "@/components/admin/withdrawal-requests";
 
 export const metadata: Metadata = {
   title: "Admin | Inwestim",
@@ -101,6 +103,7 @@ export default async function AdminPage() {
   const stats = deriveAdminStats(properties);
   const pendingRequests = await getPendingInvestments(supabase);
   const pendingDeposits = await getPendingDeposits(supabase);
+  const pendingWithdrawals = await getPendingWithdrawals(supabase);
   const treasuryOverview = await getTreasuryOverview(supabase);
   const distributionCycles = await getDistributionCycles(supabase);
   const legacyApprovedCount = await getLegacyApprovedCount(supabase);
@@ -181,6 +184,16 @@ export default async function AdminPage() {
           />
           <CardContent>
             <DepositRequests deposits={pendingDeposits} />
+          </CardContent>
+        </AppSectionCard>
+
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Pending withdrawals"
+            description="Withdrawal requests awaiting review and payout."
+          />
+          <CardContent>
+            <WithdrawalRequests withdrawals={pendingWithdrawals} />
           </CardContent>
         </AppSectionCard>
 

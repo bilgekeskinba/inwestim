@@ -20,6 +20,7 @@ import {
 import { WALLET_DIRECTION } from "@/lib/constants/wallet";
 import { WALLETCONNECT_ENABLED } from "@/lib/env";
 import { DepositTimeline } from "@/components/deposit-timeline";
+import { WithdrawalRequestForm } from "@/components/withdrawal-request-form";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -56,7 +57,7 @@ export default async function WalletPage() {
     redirect("/sign-in");
   }
 
-  const [approved, paid, ledger, depositRows] = await Promise.all([
+  const [approved, paid, ledger, depositRows, withdrawalRows] = await Promise.all([
     supabase
       .from("investments")
       .select("amount")
@@ -78,6 +79,11 @@ export default async function WalletPage() {
       .select("id, amount, asset, chain, status, created_at, tx_hash, verification_status")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("withdrawal_requests")
+      .select("id, amount, asset, chain, status, created_at, wallet_address")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const totalInvested = approved.error ? 0 : sumAmounts(approved.data);
@@ -85,6 +91,7 @@ export default async function WalletPage() {
 
   const transactions = ledger.error ? [] : ledger.data ?? [];
   const deposits = depositRows.error ? [] : depositRows.data ?? [];
+  const withdrawals = withdrawalRows.error ? [] : withdrawalRows.data ?? [];
 
   // Available Balance = sum(completed credits) − sum(completed debits).
   // Pending Balance = the same over pending transactions.
@@ -196,6 +203,48 @@ export default async function WalletPage() {
                 ) : (
                   <div className="flex min-h-[120px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-8 text-center">
                     <p className="text-sm text-slate-400">No deposit requests yet.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </AppSectionCard>
+
+          {/* Withdrawals */}
+          <AppSectionCard className="mb-8">
+            <AppSectionHeader
+              title="Withdrawals"
+              description="Request a withdrawal; an admin reviews and pays it out before it debits your balance."
+            />
+            <CardContent>
+              <WithdrawalRequestForm userId={user.id} availableBalance={availableBalance} />
+
+              <div className="mt-8">
+                <p className="mb-3 text-sm font-medium text-slate-300">Your withdrawal requests</p>
+                {withdrawals.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {withdrawals.map((withdrawal) => (
+                      <div
+                        key={String(withdrawal.id)}
+                        className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-base font-semibold text-white">
+                            {formatUSDC(Number(withdrawal.amount) || 0)}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {String(withdrawal.asset)} · {String(withdrawal.chain)}
+                          </span>
+                          <StatusBadge status={String(withdrawal.status)} />
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {formatDate((withdrawal.created_at as string | null) ?? null)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-[120px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-8 text-center">
+                    <p className="text-sm text-slate-400">No withdrawal requests yet.</p>
                   </div>
                 )}
               </div>

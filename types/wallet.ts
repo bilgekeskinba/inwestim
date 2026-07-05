@@ -24,3 +24,16 @@ export type AdminDeposit = {
   /** True when the same tx_hash appears on more than one deposit request. */
   isDuplicate: boolean;
 };
+
+/** Enriched withdrawal request, shown in the admin panel. */
+export type AdminWithdrawal = {
+  id: string;
+  userId: string;
+  userEmail: string | null;
+  amount: number;
+  asset: string;
+  walletAddress: string | null;
+  chain: string | null;
+  status: string;
+  createdAt: string | null;
+};
