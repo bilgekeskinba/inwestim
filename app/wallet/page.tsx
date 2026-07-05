@@ -19,7 +19,7 @@ import {
 } from "@/lib/constants/status";
 import { WALLET_DIRECTION } from "@/lib/constants/wallet";
 import { WALLETCONNECT_ENABLED } from "@/lib/env";
-import { explorerTxUrl } from "@/lib/web3/networks";
+import { DepositTimeline } from "@/components/deposit-timeline";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -32,22 +32,10 @@ function sumAmounts(rows: { amount: number | string | null }[] | null): number {
   return rows.reduce((total, row) => total + (Number(row.amount) || 0), 0);
 }
 
-function shortenHash(hash: string): string {
-  return hash.length > 18 ? `${hash.slice(0, 10)}…${hash.slice(-8)}` : hash;
-}
-
 function formatSignedUSDC(amount: number, direction: string): string {
   const sign = direction === WALLET_DIRECTION.DEBIT ? "-" : "+";
   return `${sign}${formatUSDC(Number(amount) || 0)}`;
 }
-
-const depositStatusClass: Record<string, string> = {
-  pending: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  confirming: "border-sky-400/30 bg-sky-400/10 text-sky-300",
-  completed: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  failed: "border-rose-400/30 bg-rose-400/10 text-rose-300",
-  cancelled: "border-slate-400/30 bg-slate-400/10 text-slate-300",
-};
 
 function BalanceCard({ label, value }: { label: string; value: string }) {
   return (
@@ -87,7 +75,7 @@ export default async function WalletPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("deposit_requests")
-      .select("id, amount, asset, chain, status, created_at, tx_hash")
+      .select("id, amount, asset, chain, status, created_at, tx_hash, verification_status")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -191,41 +179,18 @@ export default async function WalletPage() {
                 {deposits.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {deposits.map((deposit) => (
-                      <div
+                      <DepositTimeline
                         key={String(deposit.id)}
-                        className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="text-base font-semibold text-white">
-                            {formatUSDC(Number(deposit.amount) || 0)}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            {String(deposit.asset)} · {String(deposit.chain)}
-                          </span>
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
-                              depositStatusClass[String(deposit.status)] ?? depositStatusClass.pending
-                            }`}
-                          >
-                            {String(deposit.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs sm:flex-col sm:items-end sm:gap-1">
-                          <span className="text-slate-500">
-                            {formatDate((deposit.created_at as string | null) ?? null)}
-                          </span>
-                          {deposit.tx_hash ? (
-                            <a
-                              href={explorerTxUrl(String(deposit.tx_hash))}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="font-mono text-emerald-300 underline-offset-2 hover:underline"
-                            >
-                              {shortenHash(String(deposit.tx_hash))}
-                            </a>
-                          ) : null}
-                        </div>
-                      </div>
+                        amount={Number(deposit.amount) || 0}
+                        asset={String(deposit.asset)}
+                        chain={String(deposit.chain)}
+                        status={String(deposit.status)}
+                        createdAt={(deposit.created_at as string | null) ?? null}
+                        txHash={(deposit.tx_hash as string | null) ?? null}
+                        verificationStatus={
+                          (deposit.verification_status as string | null) ?? "not_verified"
+                        }
+                      />
                     ))}
                   </div>
                 ) : (
