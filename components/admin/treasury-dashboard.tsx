@@ -62,7 +62,61 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
         <Stat label="Completed deposits" value={formatUSDC(overview.completedTotal)} />
         <Stat label="Total credited (ledger)" value={formatUSDC(overview.totalCreditedDeposits)} />
         <Stat label="Completed count" value={String(overview.completedCount)} />
+        <Stat label="Credited count" value={String(overview.creditedCount)} />
       </div>
+
+      {/* Reconciliation */}
+      {overview.reconciliationStatus === "balanced" ? (
+        <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/5 p-5">
+          <p className="text-sm font-medium text-emerald-300">Treasury ledger is balanced.</p>
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-rose-400/30 bg-rose-400/5 p-5">
+          <p className="text-sm font-semibold text-rose-300">
+            Treasury reconciliation mismatch detected.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-400">
+            <span>
+              Completed deposits:{" "}
+              <span className="text-white">{formatUSDC(overview.completedTotal)}</span>
+            </span>
+            <span>
+              Ledger credited:{" "}
+              <span className="text-white">{formatUSDC(overview.totalCreditedDeposits)}</span>
+            </span>
+            <span>
+              Difference:{" "}
+              <span className="text-rose-300">{formatUSDC(overview.reconciliationDifference)}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Completed deposits with no matching ledger credit */}
+      {overview.missingLedgerCredits.length > 0 ? (
+        <div>
+          <p className="mb-3 text-sm font-medium text-rose-300">
+            Completed deposits missing a ledger credit
+          </p>
+          <div className="flex flex-col gap-3">
+            {overview.missingLedgerCredits.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-1 rounded-3xl border border-rose-400/20 bg-rose-400/5 p-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-base font-semibold text-white">
+                    {formatUSDC(item.amount)}
+                  </span>
+                  <span className="font-mono text-xs text-slate-400">{shorten(item.id)}</span>
+                  <span className="text-xs text-slate-400">{item.userEmail ?? "—"}</span>
+                </div>
+                <span className="text-xs text-slate-500">{formatDate(item.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* Recent deposit requests */}
       <div>

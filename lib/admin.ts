@@ -321,6 +321,13 @@ export type TreasuryRecentDeposit = {
   createdAt: string | null;
 };
 
+export type MissingLedgerCredit = {
+  id: string;
+  userEmail: string | null;
+  amount: number;
+  createdAt: string | null;
+};
+
 export type TreasuryOverview = {
   pendingCount: number;
   verifiedNotApprovedCount: number;
@@ -328,6 +335,10 @@ export type TreasuryOverview = {
   completedTotal: number;
   failedCount: number;
   totalCreditedDeposits: number;
+  creditedCount: number;
+  reconciliationDifference: number;
+  reconciliationStatus: "balanced" | "mismatch";
+  missingLedgerCredits: MissingLedgerCredit[];
   recentDeposits: TreasuryRecentDeposit[];
 };
 
@@ -338,6 +349,10 @@ const EMPTY_TREASURY_OVERVIEW: TreasuryOverview = {
   completedTotal: 0,
   failedCount: 0,
   totalCreditedDeposits: 0,
+  creditedCount: 0,
+  reconciliationDifference: 0,
+  reconciliationStatus: "balanced",
+  missingLedgerCredits: [],
   recentDeposits: [],
 };
 
@@ -374,10 +389,11 @@ export async function getTreasuryOverview(
     const completedTotal = completed.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
     const failedCount = data.filter((r) => statusOf(r) === "failed").length;
 
-    // Total credited from the ledger (source of truth for money in).
+    // Ledger deposit credits (source of truth for money in). Pull reference_id
+    // too so we can spot completed deposits with no matching credit.
     const { data: credits, error: creditsError } = await supabase
       .from("wallet_transactions")
-      .select("amount")
+      .select("amount, reference_id")
       .eq("type", "deposit")
       .eq("direction", "credit")
       .eq("status", "completed");
@@ -386,10 +402,25 @@ export async function getTreasuryOverview(
       (sum, r) => sum + (Number(r.amount) || 0),
       0
     );
+    const creditedCount = (credits ?? []).length;
+    const creditedRefIds = new Set(
+      (credits ?? []).map((r) => (r.reference_id ? String(r.reference_id) : "")).filter(Boolean)
+    );
 
-    // Recent 5, enriched with the requester's email.
+    // Reconciliation (rounded to avoid float noise; 0 → balanced).
+    const reconciliationDifference =
+      Math.round((completedTotal - totalCreditedDeposits) * 1e6) / 1e6;
+    const reconciliationStatus: "balanced" | "mismatch" =
+      reconciliationDifference === 0 ? "balanced" : "mismatch";
+
+    // Completed deposit requests with no matching ledger credit.
+    const missing = completed.filter((r) => !creditedRefIds.has(String(r.id))).slice(0, 5);
+
+    // Recent 5 + missing 5 — enrich emails in one lookup.
     const recent = data.slice(0, 5);
-    const userIds = [...new Set(recent.map((r) => r.user_id).filter(Boolean))];
+    const userIds = [
+      ...new Set([...recent, ...missing].map((r) => r.user_id).filter(Boolean)),
+    ];
     const emails = new Map<string, string | null>();
     if (userIds.length > 0) {
       const { data: profs } = await supabase
@@ -409,6 +440,13 @@ export async function getTreasuryOverview(
       createdAt: (r.created_at as string | null) ?? null,
     }));
 
+    const missingLedgerCredits: MissingLedgerCredit[] = missing.map((r) => ({
+      id: String(r.id),
+      userEmail: emails.get(String(r.user_id)) ?? null,
+      amount: Number(r.amount) || 0,
+      createdAt: (r.created_at as string | null) ?? null,
+    }));
+
     return {
       pendingCount,
       verifiedNotApprovedCount,
@@ -416,6 +454,10 @@ export async function getTreasuryOverview(
       completedTotal,
       failedCount,
       totalCreditedDeposits,
+      creditedCount,
+      reconciliationDifference,
+      reconciliationStatus,
+      missingLedgerCredits,
       recentDeposits,
     };
   } catch (error) {
