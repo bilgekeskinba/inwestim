@@ -19,6 +19,7 @@ import {
 } from "@/lib/constants/status";
 import { WALLET_DIRECTION } from "@/lib/constants/wallet";
 import { WALLETCONNECT_ENABLED } from "@/lib/env";
+import { explorerTxUrl } from "@/lib/web3/networks";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -29,6 +30,10 @@ export const metadata: Metadata = {
 function sumAmounts(rows: { amount: number | string | null }[] | null): number {
   if (!rows) return 0;
   return rows.reduce((total, row) => total + (Number(row.amount) || 0), 0);
+}
+
+function shortenHash(hash: string): string {
+  return hash.length > 18 ? `${hash.slice(0, 10)}…${hash.slice(-8)}` : hash;
 }
 
 function formatSignedUSDC(amount: number, direction: string): string {
@@ -82,7 +87,7 @@ export default async function WalletPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("deposit_requests")
-      .select("id, amount, asset, chain, status, created_at")
+      .select("id, amount, asset, chain, status, created_at, tx_hash")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -205,9 +210,21 @@ export default async function WalletPage() {
                             {String(deposit.status)}
                           </span>
                         </div>
-                        <span className="text-xs text-slate-500">
-                          {formatDate((deposit.created_at as string | null) ?? null)}
-                        </span>
+                        <div className="flex items-center gap-3 text-xs sm:flex-col sm:items-end sm:gap-1">
+                          <span className="text-slate-500">
+                            {formatDate((deposit.created_at as string | null) ?? null)}
+                          </span>
+                          {deposit.tx_hash ? (
+                            <a
+                              href={explorerTxUrl(String(deposit.tx_hash))}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-emerald-300 underline-offset-2 hover:underline"
+                            >
+                              {shortenHash(String(deposit.tx_hash))}
+                            </a>
+                          ) : null}
+                        </div>
                       </div>
                     ))}
                   </div>

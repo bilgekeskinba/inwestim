@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
-import { polygonAmoy } from "@reown/appkit/networks";
 import { Button } from "@/components/ui/button";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { DEPOSIT_STATUS } from "@/lib/constants/status";
 import { USDC } from "@/lib/constants/wallet";
+import { ACTIVE_NETWORK } from "@/lib/web3/networks";
 
-const AMOY_CHAIN_ID = polygonAmoy.id; // 80002
-const AMOY_CHAIN_VALUE = "polygon-amoy";
 const TX_HASH_RE = /^0x[a-fA-F0-9]{64}$/;
 
 const inputClass =
@@ -32,7 +30,7 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onAmoy = chainId === AMOY_CHAIN_ID;
+  const onActiveChain = chainId === ACTIVE_NETWORK.chainId;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,8 +42,8 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
       setError("Connect your wallet first.");
       return;
     }
-    if (!onAmoy) {
-      setError("Please switch to Polygon Amoy.");
+    if (!onActiveChain) {
+      setError(`Please switch to ${ACTIVE_NETWORK.name}.`);
       return;
     }
     const amountNum = Number(amount) || 0;
@@ -65,10 +63,24 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
 
     setIsSubmitting(true);
     const supabase = getSupabaseBrowserClient();
+
+    // App-side duplicate guard (catches this user's own re-submissions; the DB
+    // unique index is the authoritative cross-user guard below).
+    const { data: existing } = await supabase
+      .from("deposit_requests")
+      .select("id")
+      .eq("tx_hash", hash)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      setIsSubmitting(false);
+      setError("This transaction hash has already been submitted.");
+      return;
+    }
+
     const { error: insertError } = await supabase.from("deposit_requests").insert({
       user_id: userId,
       wallet_address: address,
-      chain: AMOY_CHAIN_VALUE,
+      chain: ACTIVE_NETWORK.key,
       asset: USDC,
       amount: amountNum,
       tx_hash: hash,
@@ -77,7 +89,12 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
 
     if (insertError) {
       setIsSubmitting(false);
-      setError(insertError.message);
+      // 23505 = unique_violation from the tx_hash unique index.
+      setError(
+        insertError.code === "23505"
+          ? "This transaction hash has already been submitted."
+          : insertError.message
+      );
       return;
     }
 
@@ -110,10 +127,12 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
     );
   }
 
-  if (!onAmoy) {
+  if (!onActiveChain) {
     return (
       <div className="flex flex-col items-start gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <p className="text-sm text-amber-300">Please switch to Polygon Amoy to deposit.</p>
+        <p className="text-sm text-amber-300">
+          Please switch to {ACTIVE_NETWORK.name} to deposit.
+        </p>
         <Button type="button" onClick={() => open({ view: "Networks" })}>
           Switch Network
         </Button>
@@ -132,7 +151,7 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
         </div>
         <div className="mt-2 flex items-center justify-between">
           <span className="text-slate-400">Network</span>
-          <span className="font-medium text-white">Polygon Amoy</span>
+          <span className="font-medium text-white">{ACTIVE_NETWORK.name}</span>
         </div>
       </div>
 

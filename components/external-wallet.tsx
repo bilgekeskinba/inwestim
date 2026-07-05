@@ -12,6 +12,7 @@ import {
   CHAIN_LABELS,
   isProjectConfigured,
 } from "@/lib/web3/config";
+import { ACTIVE_NETWORK } from "@/lib/web3/networks";
 
 function shortenAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -93,7 +94,9 @@ export function ExternalWallet({ userId }: { userId: string }) {
       <div className={cardClass}>
         <div className="flex flex-col gap-1">
           <p className="text-sm text-slate-400">Status</p>
-          <p className="text-lg font-medium text-amber-300">Please switch to Polygon.</p>
+          <p className="text-lg font-medium text-amber-300">
+            Please switch to {ACTIVE_NETWORK.name}.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button type="button" onClick={() => open({ view: "Networks" })}>
@@ -117,7 +120,10 @@ export function ExternalWallet({ userId }: { userId: string }) {
       </div>
       <div className="flex flex-col">
         <Row label="Wallet Address" value={shortenAddress(address)} />
-        <Row label="Network" value={chainId ? CHAIN_LABELS[chainId] ?? "Polygon" : "—"} />
+        <Row
+          label="Network"
+          value={chainId ? CHAIN_LABELS[chainId] ?? ACTIVE_NETWORK.name : "—"}
+        />
         <Row
           label="USDC Balance"
           value={usdcBalance != null ? `${usdcBalance} USDC` : "…"}

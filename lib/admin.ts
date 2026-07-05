@@ -253,9 +253,11 @@ export async function getPendingDeposits(
   supabase: SupabaseServerClient
 ): Promise<AdminDeposit[]> {
   try {
+    // Select "*" so verification_* columns are included when present without
+    // erroring before the migration is applied.
     const { data, error } = await supabase
       .from("deposit_requests")
-      .select("id, user_id, wallet_address, chain, asset, amount, status, created_at")
+      .select("*")
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
@@ -275,17 +277,34 @@ export async function getPendingDeposits(
       profs?.forEach((p) => emails.set(String(p.id), p.email ? String(p.email) : null));
     }
 
-    return data.map((row) => ({
-      id: String(row.id),
-      userId: String(row.user_id ?? ""),
-      userEmail: emails.get(String(row.user_id)) ?? null,
-      amount: Number(row.amount) || 0,
-      asset: String(row.asset ?? "USDC"),
-      walletAddress: (row.wallet_address as string | null) ?? null,
-      chain: (row.chain as string | null) ?? null,
-      status: String(row.status),
-      createdAt: (row.created_at as string | null) ?? null,
-    }));
+    // Duplicate tx_hash detection across ALL deposit requests (any status).
+    const txCounts = new Map<string, number>();
+    const { data: allTx } = await supabase.from("deposit_requests").select("tx_hash");
+    allTx?.forEach((r) => {
+      const hash = r.tx_hash ? String(r.tx_hash) : null;
+      if (hash) txCounts.set(hash, (txCounts.get(hash) ?? 0) + 1);
+    });
+
+    return data.map((row) => {
+      const hash = (row.tx_hash as string | null) ?? null;
+      return {
+        id: String(row.id),
+        userId: String(row.user_id ?? ""),
+        userEmail: emails.get(String(row.user_id)) ?? null,
+        amount: Number(row.amount) || 0,
+        asset: String(row.asset ?? "USDC"),
+        walletAddress: (row.wallet_address as string | null) ?? null,
+        chain: (row.chain as string | null) ?? null,
+        txHash: hash,
+        status: String(row.status),
+        createdAt: (row.created_at as string | null) ?? null,
+        verificationStatus: (row.verification_status as string | null) ?? "not_verified",
+        verificationDetails:
+          (row.verification_details as AdminDeposit["verificationDetails"]) ?? null,
+        verifiedAt: (row.verified_at as string | null) ?? null,
+        isDuplicate: hash ? (txCounts.get(hash) ?? 0) > 1 : false,
+      };
+    });
   } catch (error) {
     adminDevError("pending deposits error", error);
     return [];

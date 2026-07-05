@@ -5,7 +5,6 @@ export const USDC = "USDC";
 
 export const SUPPORTED_CHAINS = [
   { value: "polygon", label: "Polygon" },
-  { value: "polygon-amoy", label: "Polygon Amoy" },
 ] as const;
 
 export const WALLET_TX_TYPE = {
