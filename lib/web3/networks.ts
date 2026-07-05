@@ -69,3 +69,11 @@ export function explorerTxUrl(
 ): string {
   return `${network.explorerUrl}/tx/${txHash}`;
 }
+
+/** Explorer URL for an address on a given (or the active) network. */
+export function explorerAddressUrl(
+  address: string,
+  network: NetworkConfig = ACTIVE_NETWORK
+): string {
+  return `${network.explorerUrl}/address/${address}`;
+}

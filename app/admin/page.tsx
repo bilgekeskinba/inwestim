@@ -11,6 +11,7 @@ import {
   getPendingDeposits,
   getDistributionCycles,
   getLegacyApprovedCount,
+  getTreasuryOverview,
   type AdminProperty,
 } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
@@ -21,6 +22,7 @@ import { DepositRequests } from "@/components/admin/deposit-requests";
 import { DistributionCycleForm } from "@/components/admin/distribution-cycle-form";
 import { DistributionCycles } from "@/components/admin/distribution-cycles";
 import { DataMaintenance } from "@/components/admin/data-maintenance";
+import { TreasuryDashboard } from "@/components/admin/treasury-dashboard";
 
 export const metadata: Metadata = {
   title: "Admin | Inwestim",
@@ -99,6 +101,7 @@ export default async function AdminPage() {
   const stats = deriveAdminStats(properties);
   const pendingRequests = await getPendingInvestments(supabase);
   const pendingDeposits = await getPendingDeposits(supabase);
+  const treasuryOverview = await getTreasuryOverview(supabase);
   const distributionCycles = await getDistributionCycles(supabase);
   const legacyApprovedCount = await getLegacyApprovedCount(supabase);
 
@@ -178,6 +181,16 @@ export default async function AdminPage() {
           />
           <CardContent>
             <DepositRequests deposits={pendingDeposits} />
+          </CardContent>
+        </AppSectionCard>
+
+        <AppSectionCard className="mt-10">
+          <AppSectionHeader
+            title="Treasury overview"
+            description="Operational overview of deposit activity (database only)."
+          />
+          <CardContent>
+            <TreasuryDashboard overview={treasuryOverview} />
           </CardContent>
         </AppSectionCard>
 

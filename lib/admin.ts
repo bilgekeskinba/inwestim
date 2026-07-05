@@ -311,6 +311,119 @@ export async function getPendingDeposits(
   }
 }
 
+export type TreasuryRecentDeposit = {
+  id: string;
+  userEmail: string | null;
+  amount: number;
+  status: string;
+  verificationStatus: string;
+  txHash: string | null;
+  createdAt: string | null;
+};
+
+export type TreasuryOverview = {
+  pendingCount: number;
+  verifiedNotApprovedCount: number;
+  completedCount: number;
+  completedTotal: number;
+  failedCount: number;
+  totalCreditedDeposits: number;
+  recentDeposits: TreasuryRecentDeposit[];
+};
+
+const EMPTY_TREASURY_OVERVIEW: TreasuryOverview = {
+  pendingCount: 0,
+  verifiedNotApprovedCount: 0,
+  completedCount: 0,
+  completedTotal: 0,
+  failedCount: 0,
+  totalCreditedDeposits: 0,
+  recentDeposits: [],
+};
+
+/**
+ * Database-only operational overview of deposit activity for the treasury
+ * dashboard. Does NOT query the blockchain. Soft-fails to zeroed metrics.
+ */
+export async function getTreasuryOverview(
+  supabase: SupabaseServerClient
+): Promise<TreasuryOverview> {
+  try {
+    const { data, error } = await supabase
+      .from("deposit_requests")
+      .select("id, user_id, amount, status, verification_status, tx_hash, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      adminDevError("treasury deposits query failed", error);
+      return EMPTY_TREASURY_OVERVIEW;
+    }
+
+    const statusOf = (row: (typeof data)[number]) => String(row.status ?? "");
+    const verificationOf = (row: (typeof data)[number]) =>
+      String(row.verification_status ?? "not_verified");
+
+    const pendingCount = data.filter((r) => statusOf(r) === "pending").length;
+    const verifiedNotApprovedCount = data.filter(
+      (r) =>
+        verificationOf(r) === "verified" &&
+        (statusOf(r) === "pending" || statusOf(r) === "confirming")
+    ).length;
+    const completed = data.filter((r) => statusOf(r) === "completed");
+    const completedCount = completed.length;
+    const completedTotal = completed.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const failedCount = data.filter((r) => statusOf(r) === "failed").length;
+
+    // Total credited from the ledger (source of truth for money in).
+    const { data: credits, error: creditsError } = await supabase
+      .from("wallet_transactions")
+      .select("amount")
+      .eq("type", "deposit")
+      .eq("direction", "credit")
+      .eq("status", "completed");
+    if (creditsError) adminDevError("treasury credits query failed", creditsError);
+    const totalCreditedDeposits = (credits ?? []).reduce(
+      (sum, r) => sum + (Number(r.amount) || 0),
+      0
+    );
+
+    // Recent 5, enriched with the requester's email.
+    const recent = data.slice(0, 5);
+    const userIds = [...new Set(recent.map((r) => r.user_id).filter(Boolean))];
+    const emails = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      profs?.forEach((p) => emails.set(String(p.id), p.email ? String(p.email) : null));
+    }
+
+    const recentDeposits: TreasuryRecentDeposit[] = recent.map((r) => ({
+      id: String(r.id),
+      userEmail: emails.get(String(r.user_id)) ?? null,
+      amount: Number(r.amount) || 0,
+      status: statusOf(r),
+      verificationStatus: verificationOf(r),
+      txHash: (r.tx_hash as string | null) ?? null,
+      createdAt: (r.created_at as string | null) ?? null,
+    }));
+
+    return {
+      pendingCount,
+      verifiedNotApprovedCount,
+      completedCount,
+      completedTotal,
+      failedCount,
+      totalCreditedDeposits,
+      recentDeposits,
+    };
+  } catch (error) {
+    adminDevError("treasury overview error", error);
+    return EMPTY_TREASURY_OVERVIEW;
+  }
+}
+
 /**
  * Loads a single property by id for the edit page. Returns null when missing or
  * on error so the caller can render a not-found state.
