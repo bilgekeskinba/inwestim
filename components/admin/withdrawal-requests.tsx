@@ -54,6 +54,59 @@ export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdraw
     }
   };
 
+  // Mark as Completed with a safety re-check of the user's available balance.
+  const markCompleted = async (withdrawal: AdminWithdrawal) => {
+    setBusyId(withdrawal.id);
+    const supabase = getSupabaseBrowserClient();
+
+    // Recompute available balance from the ledger (completed credits − debits).
+    const { data: txns, error: balError } = await supabase
+      .from("wallet_transactions")
+      .select("amount, direction, status")
+      .eq("user_id", withdrawal.userId);
+
+    if (balError) {
+      setBusyId(null);
+      notify("balance check failed", `Could not verify balance: ${balError.message}`);
+      return;
+    }
+
+    let available = 0;
+    for (const tx of txns ?? []) {
+      if (tx.status !== WALLET_TX_STATUS.COMPLETED) continue;
+      available += (Number(tx.amount) || 0) * (tx.direction === WALLET_DIRECTION.DEBIT ? -1 : 1);
+    }
+
+    if (withdrawal.amount > available) {
+      setBusyId(null);
+      notify(
+        "insufficient balance",
+        "Insufficient available balance at completion time."
+      );
+      return;
+    }
+
+    const { error } = await supabase
+      .from("withdrawal_requests")
+      .update({
+        status: WITHDRAWAL_STATUS.COMPLETED,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", withdrawal.id)
+      .eq("status", WITHDRAWAL_STATUS.APPROVED);
+
+    if (error) {
+      setBusyId(null);
+      notify("withdrawal completion failed", `Could not complete withdrawal: ${error.message}`);
+      return;
+    }
+
+    await createWithdrawalDebit(supabase, withdrawal);
+
+    setBusyId(null);
+    router.refresh();
+  };
+
   const setStatus = async (
     withdrawal: AdminWithdrawal,
     next: string,
@@ -165,14 +218,7 @@ export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdraw
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() =>
-                      setStatus(
-                        withdrawal,
-                        WITHDRAWAL_STATUS.COMPLETED,
-                        WITHDRAWAL_STATUS.APPROVED,
-                        { completed_at: now() }
-                      )
-                    }
+                    onClick={() => markCompleted(withdrawal)}
                     disabled={busy}
                     className="bg-emerald-500 text-white hover:bg-emerald-400"
                   >

@@ -21,6 +21,7 @@ import { WALLET_DIRECTION } from "@/lib/constants/wallet";
 import { WALLETCONNECT_ENABLED } from "@/lib/env";
 import { DepositTimeline } from "@/components/deposit-timeline";
 import { WithdrawalRequestForm } from "@/components/withdrawal-request-form";
+import { WithdrawalTimeline } from "@/components/withdrawal-timeline";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -223,23 +224,15 @@ export default async function WalletPage() {
                 {withdrawals.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {withdrawals.map((withdrawal) => (
-                      <div
+                      <WithdrawalTimeline
                         key={String(withdrawal.id)}
-                        className="flex flex-col gap-2 rounded-3xl border border-white/10 bg-slate-950/60 p-5 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="text-base font-semibold text-white">
-                            {formatUSDC(Number(withdrawal.amount) || 0)}
-                          </span>
-                          <span className="text-xs text-slate-400">
-                            {String(withdrawal.asset)} · {String(withdrawal.chain)}
-                          </span>
-                          <StatusBadge status={String(withdrawal.status)} />
-                        </div>
-                        <span className="text-xs text-slate-500">
-                          {formatDate((withdrawal.created_at as string | null) ?? null)}
-                        </span>
-                      </div>
+                        amount={Number(withdrawal.amount) || 0}
+                        asset={String(withdrawal.asset)}
+                        chain={String(withdrawal.chain)}
+                        status={String(withdrawal.status)}
+                        createdAt={(withdrawal.created_at as string | null) ?? null}
+                        walletAddress={(withdrawal.wallet_address as string | null) ?? null}
+                      />
                     ))}
                   </div>
                 ) : (
