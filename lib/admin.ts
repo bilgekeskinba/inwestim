@@ -381,7 +381,15 @@ export type MissingLedgerCredit = {
   createdAt: string | null;
 };
 
+export type OrphanLedgerDebit = {
+  id: string;
+  referenceId: string | null;
+  amount: number;
+  createdAt: string | null;
+};
+
 export type TreasuryOverview = {
+  // Deposits
   pendingCount: number;
   verifiedNotApprovedCount: number;
   completedCount: number;
@@ -393,6 +401,22 @@ export type TreasuryOverview = {
   reconciliationStatus: "balanced" | "mismatch";
   missingLedgerCredits: MissingLedgerCredit[];
   recentDeposits: TreasuryRecentDeposit[];
+
+  // Withdrawals
+  withdrawalPendingCount: number;
+  withdrawalApprovedCount: number;
+  withdrawalCompletedCount: number;
+  withdrawalFailedCancelledCount: number;
+  completedWithdrawalTotal: number;
+  ledgerWithdrawalDebitTotal: number;
+  withdrawalDebitCount: number;
+  withdrawalReconciliationDifference: number;
+  withdrawalReconciliationStatus: "balanced" | "mismatch";
+  missingWithdrawalDebits: MissingLedgerCredit[];
+  orphanWithdrawalDebits: OrphanLedgerDebit[];
+
+  // Combined
+  netTreasuryPosition: number;
 };
 
 const EMPTY_TREASURY_OVERVIEW: TreasuryOverview = {
@@ -407,6 +431,18 @@ const EMPTY_TREASURY_OVERVIEW: TreasuryOverview = {
   reconciliationStatus: "balanced",
   missingLedgerCredits: [],
   recentDeposits: [],
+  withdrawalPendingCount: 0,
+  withdrawalApprovedCount: 0,
+  withdrawalCompletedCount: 0,
+  withdrawalFailedCancelledCount: 0,
+  completedWithdrawalTotal: 0,
+  ledgerWithdrawalDebitTotal: 0,
+  withdrawalDebitCount: 0,
+  withdrawalReconciliationDifference: 0,
+  withdrawalReconciliationStatus: "balanced",
+  missingWithdrawalDebits: [],
+  orphanWithdrawalDebits: [],
+  netTreasuryPosition: 0,
 };
 
 /**
@@ -469,10 +505,65 @@ export async function getTreasuryOverview(
     // Completed deposit requests with no matching ledger credit.
     const missing = completed.filter((r) => !creditedRefIds.has(String(r.id))).slice(0, 5);
 
-    // Recent 5 + missing 5 — enrich emails in one lookup.
+    // --- Withdrawals ---
+    const { data: wData, error: wError } = await supabase
+      .from("withdrawal_requests")
+      .select("id, user_id, amount, status, created_at");
+    if (wError) adminDevError("treasury withdrawals query failed", wError);
+    const wRows = wData ?? [];
+    const wStatusOf = (r: (typeof wRows)[number]) => String(r.status ?? "");
+
+    const withdrawalPendingCount = wRows.filter((r) => wStatusOf(r) === "pending").length;
+    const withdrawalApprovedCount = wRows.filter((r) => wStatusOf(r) === "approved").length;
+    const wCompleted = wRows.filter((r) => wStatusOf(r) === "completed");
+    const withdrawalCompletedCount = wCompleted.length;
+    const withdrawalFailedCancelledCount = wRows.filter(
+      (r) => wStatusOf(r) === "failed" || wStatusOf(r) === "cancelled"
+    ).length;
+    const completedWithdrawalTotal = wCompleted.reduce(
+      (sum, r) => sum + (Number(r.amount) || 0),
+      0
+    );
+
+    const { data: wDebits, error: wDebitsError } = await supabase
+      .from("wallet_transactions")
+      .select("id, amount, reference_id, created_at")
+      .eq("type", "withdrawal")
+      .eq("direction", "debit")
+      .eq("status", "completed");
+    if (wDebitsError) adminDevError("treasury withdrawal debits query failed", wDebitsError);
+    const wDebitRows = wDebits ?? [];
+    const ledgerWithdrawalDebitTotal = wDebitRows.reduce(
+      (sum, r) => sum + (Number(r.amount) || 0),
+      0
+    );
+    const withdrawalDebitCount = wDebitRows.length;
+    const wDebitRefIds = new Set(
+      wDebitRows.map((r) => (r.reference_id ? String(r.reference_id) : "")).filter(Boolean)
+    );
+    const wIds = new Set(wRows.map((r) => String(r.id)));
+
+    const withdrawalReconciliationDifference =
+      Math.round((completedWithdrawalTotal - ledgerWithdrawalDebitTotal) * 1e6) / 1e6;
+    const withdrawalReconciliationStatus: "balanced" | "mismatch" =
+      withdrawalReconciliationDifference === 0 ? "balanced" : "mismatch";
+
+    // Completed withdrawals with no matching ledger debit.
+    const missingW = wCompleted.filter((r) => !wDebitRefIds.has(String(r.id))).slice(0, 5);
+    // Withdrawal debits pointing at a withdrawal request that no longer exists.
+    const orphanDebitRows = wDebitRows
+      .filter((r) => !r.reference_id || !wIds.has(String(r.reference_id)))
+      .slice(0, 5);
+
+    const netTreasuryPosition =
+      Math.round((totalCreditedDeposits - ledgerWithdrawalDebitTotal) * 1e6) / 1e6;
+
+    // Recent 5 + missing deposits + missing withdrawals — enrich emails once.
     const recent = data.slice(0, 5);
     const userIds = [
-      ...new Set([...recent, ...missing].map((r) => r.user_id).filter(Boolean)),
+      ...new Set(
+        [...recent, ...missing, ...missingW].map((r) => r.user_id).filter(Boolean)
+      ),
     ];
     const emails = new Map<string, string | null>();
     if (userIds.length > 0) {
@@ -500,6 +591,20 @@ export async function getTreasuryOverview(
       createdAt: (r.created_at as string | null) ?? null,
     }));
 
+    const missingWithdrawalDebits: MissingLedgerCredit[] = missingW.map((r) => ({
+      id: String(r.id),
+      userEmail: emails.get(String(r.user_id)) ?? null,
+      amount: Number(r.amount) || 0,
+      createdAt: (r.created_at as string | null) ?? null,
+    }));
+
+    const orphanWithdrawalDebits: OrphanLedgerDebit[] = orphanDebitRows.map((r) => ({
+      id: String(r.id),
+      referenceId: r.reference_id ? String(r.reference_id) : null,
+      amount: Number(r.amount) || 0,
+      createdAt: (r.created_at as string | null) ?? null,
+    }));
+
     return {
       pendingCount,
       verifiedNotApprovedCount,
@@ -512,6 +617,18 @@ export async function getTreasuryOverview(
       reconciliationStatus,
       missingLedgerCredits,
       recentDeposits,
+      withdrawalPendingCount,
+      withdrawalApprovedCount,
+      withdrawalCompletedCount,
+      withdrawalFailedCancelledCount,
+      completedWithdrawalTotal,
+      ledgerWithdrawalDebitTotal,
+      withdrawalDebitCount,
+      withdrawalReconciliationDifference,
+      withdrawalReconciliationStatus,
+      missingWithdrawalDebits,
+      orphanWithdrawalDebits,
+      netTreasuryPosition,
     };
   } catch (error) {
     adminDevError("treasury overview error", error);

@@ -54,7 +54,15 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
         </div>
       </div>
 
-      {/* Operational metrics (database only) */}
+      {/* Net treasury position (deposit credits − withdrawal debits) */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Stat label="Net Treasury Position" value={formatUSDC(overview.netTreasuryPosition)} />
+        <Stat label="Deposits credited" value={formatUSDC(overview.totalCreditedDeposits)} />
+        <Stat label="Withdrawals debited" value={formatUSDC(overview.ledgerWithdrawalDebitTotal)} />
+      </div>
+
+      {/* Deposit metrics (database only) */}
+      <p className="text-sm font-medium text-slate-300">Deposits</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Stat label="Pending deposits" value={String(overview.pendingCount)} />
         <Stat label="Verified, not approved" value={String(overview.verifiedNotApprovedCount)} />
@@ -164,6 +172,102 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
           </div>
         )}
       </div>
+
+      {/* Withdrawal metrics */}
+      <p className="pt-2 text-sm font-medium text-slate-300">Withdrawals</p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Stat label="Pending withdrawals" value={String(overview.withdrawalPendingCount)} />
+        <Stat label="Approved withdrawals" value={String(overview.withdrawalApprovedCount)} />
+        <Stat label="Failed / cancelled" value={String(overview.withdrawalFailedCancelledCount)} />
+        <Stat label="Completed withdrawals" value={formatUSDC(overview.completedWithdrawalTotal)} />
+        <Stat label="Total debited (ledger)" value={formatUSDC(overview.ledgerWithdrawalDebitTotal)} />
+        <Stat label="Completed count" value={String(overview.withdrawalCompletedCount)} />
+        <Stat label="Debited count" value={String(overview.withdrawalDebitCount)} />
+      </div>
+
+      {/* Withdrawal reconciliation */}
+      {overview.withdrawalReconciliationStatus === "balanced" ? (
+        <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/5 p-5">
+          <p className="text-sm font-medium text-emerald-300">
+            Withdrawal ledger is balanced.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-rose-400/30 bg-rose-400/5 p-5">
+          <p className="text-sm font-semibold text-rose-300">
+            Withdrawal reconciliation mismatch detected.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-400">
+            <span>
+              Completed withdrawals:{" "}
+              <span className="text-white">{formatUSDC(overview.completedWithdrawalTotal)}</span>
+            </span>
+            <span>
+              Ledger debited:{" "}
+              <span className="text-white">{formatUSDC(overview.ledgerWithdrawalDebitTotal)}</span>
+            </span>
+            <span>
+              Difference:{" "}
+              <span className="text-rose-300">
+                {formatUSDC(overview.withdrawalReconciliationDifference)}
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Completed withdrawals with no matching ledger debit */}
+      {overview.missingWithdrawalDebits.length > 0 ? (
+        <div>
+          <p className="mb-3 text-sm font-medium text-rose-300">
+            Completed withdrawals missing a ledger debit
+          </p>
+          <div className="flex flex-col gap-3">
+            {overview.missingWithdrawalDebits.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-1 rounded-3xl border border-rose-400/20 bg-rose-400/5 p-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-base font-semibold text-white">
+                    {formatUSDC(item.amount)}
+                  </span>
+                  <span className="font-mono text-xs text-slate-400">{shorten(item.id)}</span>
+                  <span className="text-xs text-slate-400">{item.userEmail ?? "—"}</span>
+                </div>
+                <span className="text-xs text-slate-500">{formatDate(item.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Orphan withdrawal debits (reference no longer exists) */}
+      {overview.orphanWithdrawalDebits.length > 0 ? (
+        <div>
+          <p className="mb-3 text-sm font-medium text-rose-300">
+            Orphan withdrawal debits (no matching request)
+          </p>
+          <div className="flex flex-col gap-3">
+            {overview.orphanWithdrawalDebits.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-col gap-1 rounded-3xl border border-rose-400/20 bg-rose-400/5 p-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-base font-semibold text-white">
+                    {formatUSDC(item.amount)}
+                  </span>
+                  <span className="font-mono text-xs text-slate-400">
+                    ref: {item.referenceId ? shorten(item.referenceId) : "—"}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500">{formatDate(item.createdAt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
