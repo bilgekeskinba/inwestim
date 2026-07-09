@@ -53,6 +53,17 @@ export type AdminProperty = {
   created_at?: string;
 };
 
+/** A document attached to a property. */
+export type PropertyDocument = {
+  id: string;
+  property_id: string;
+  title: string;
+  document_type: string;
+  file_url: string;
+  is_public: boolean;
+  created_at?: string | null;
+};
+
 /** Public-facing single property (live only), read straight from DB columns. */
 export type LivePropertyDetail = {
   id: string;

@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Property } from "@/types/property";
-import type { LivePropertyDetail } from "@/types/property";
+import type { LivePropertyDetail, PropertyDocument } from "@/types/property";
 
 // Re-exported so existing `@/lib/properties` type imports keep working.
 export type { LivePropertyDetail };
@@ -93,6 +93,43 @@ export async function getLivePropertyById(
       console.error("[properties] detail fetch error", error);
     }
     return null;
+  }
+}
+
+/**
+ * Public documents for a property. Only is_public = true rows are returned
+ * (and RLS also enforces this). Soft-fails to an empty array.
+ */
+export async function getPublicPropertyDocuments(
+  propertyId: string
+): Promise<Pick<PropertyDocument, "id" | "title" | "document_type" | "file_url">[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("property_documents")
+      .select("id, title, document_type, file_url")
+      .eq("property_id", propertyId)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      if (error && process.env.NODE_ENV !== "production") {
+        console.error("[properties] public documents fetch failed", error);
+      }
+      return [];
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      title: String(row.title ?? ""),
+      document_type: String(row.document_type ?? "other"),
+      file_url: String(row.file_url ?? ""),
+    }));
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[properties] public documents error", error);
+    }
+    return [];
   }
 }
 

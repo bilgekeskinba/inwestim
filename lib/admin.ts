@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import type { AdminProperty } from "@/types/property";
+import type { AdminProperty, PropertyDocument } from "@/types/property";
 import type { AdminInvestment } from "@/types/investment";
 import type { AdminDistributionCycle } from "@/types/distribution";
 import type { AdminDeposit, AdminWithdrawal } from "@/types/wallet";
@@ -633,6 +633,41 @@ export async function getTreasuryOverview(
   } catch (error) {
     adminDevError("treasury overview error", error);
     return EMPTY_TREASURY_OVERVIEW;
+  }
+}
+
+/**
+ * Lists all documents (public and private) for a property, for the admin edit
+ * page. Soft-fails to an empty array.
+ */
+export async function getPropertyDocuments(
+  supabase: SupabaseServerClient,
+  propertyId: string
+): Promise<PropertyDocument[]> {
+  try {
+    const { data, error } = await supabase
+      .from("property_documents")
+      .select("id, property_id, title, document_type, file_url, is_public, created_at")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false });
+
+    if (error || !data) {
+      adminDevError("property documents query failed", error);
+      return [];
+    }
+
+    return data.map((row) => ({
+      id: String(row.id),
+      property_id: String(row.property_id ?? ""),
+      title: String(row.title ?? ""),
+      document_type: String(row.document_type ?? "other"),
+      file_url: String(row.file_url ?? ""),
+      is_public: Boolean(row.is_public),
+      created_at: (row.created_at as string | null) ?? null,
+    }));
+  } catch (error) {
+    adminDevError("property documents error", error);
+    return [];
   }
 }
 

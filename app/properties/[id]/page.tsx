@@ -1,13 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { MapPin, TrendingUp, ArrowLeft } from "lucide-react";
+import { MapPin, TrendingUp, ArrowLeft, FileText } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { InvestmentModal } from "@/components/investment-modal";
-import { getLivePropertyById, type LivePropertyDetail } from "@/lib/properties";
+import {
+  getLivePropertyById,
+  getPublicPropertyDocuments,
+  type LivePropertyDetail,
+} from "@/lib/properties";
 import { formatUSDC } from "@/lib/format/currency";
+
+type PublicDocument = {
+  id: string;
+  title: string;
+  document_type: string;
+  file_url: string;
+};
+
+function documentTypeLabel(type: string): string {
+  return type.replace(/_/g, " ");
+}
 
 export const metadata: Metadata = {
   title: "Property | Inwestim",
@@ -63,7 +78,13 @@ function NotFoundState() {
   );
 }
 
-function PropertyDetail({ property }: { property: LivePropertyDetail }) {
+function PropertyDetail({
+  property,
+  documents,
+}: {
+  property: LivePropertyDetail;
+  documents: PublicDocument[];
+}) {
   const funding = Math.max(0, Math.min(100, Number(property.funding_percentage) || 0));
   const riskKey = property.risk_level?.toLowerCase() ?? "medium";
 
@@ -144,6 +165,36 @@ function PropertyDetail({ property }: { property: LivePropertyDetail }) {
                 value={formatUSDC(property.monthly_rental_income)}
               />
             </div>
+
+            {documents.length > 0 ? (
+              <div className="mt-10">
+                <h2 className="text-xl font-semibold text-white">Documents</h2>
+                <div className="mt-4 flex flex-col gap-3">
+                  {documents.map((doc) => (
+                    <a
+                      key={doc.id}
+                      href={doc.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-4 rounded-3xl border border-white/10 bg-slate-900/60 p-5 transition-colors hover:border-white/20"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <FileText className="h-5 w-5 flex-shrink-0 text-emerald-300" />
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-medium text-white">{doc.title}</p>
+                          <p className="text-xs capitalize text-slate-400">
+                            {documentTypeLabel(doc.document_type)}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="flex-shrink-0 text-sm font-medium text-emerald-300">
+                        View
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Sidebar */}
@@ -219,5 +270,7 @@ export default async function PropertyDetailPage({
     return <NotFoundState />;
   }
 
-  return <PropertyDetail property={property} />;
+  const documents = await getPublicPropertyDocuments(id);
+
+  return <PropertyDetail property={property} documents={documents} />;
 }

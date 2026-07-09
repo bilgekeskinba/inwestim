@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { requireAdmin, getAdminProperty } from "@/lib/admin";
+import { requireAdmin, getAdminProperty, getPropertyDocuments } from "@/lib/admin";
 import { PropertyForm, type PropertyFormValues } from "@/components/admin/property-form";
+import { PropertyDocuments } from "@/components/admin/property-documents";
 import { EmptyState } from "@/components/empty-state";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default async function EditPropertyPage({
   const { id } = await params;
 
   const property = await getAdminProperty(supabase, id);
+  const documents = property ? await getPropertyDocuments(supabase, id) : [];
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
@@ -57,6 +59,22 @@ export default async function EditPropertyPage({
             )}
           </CardContent>
         </Card>
+
+        {property ? (
+          <Card className="mt-8 rounded-3xl border-white/10 bg-slate-900/90">
+            <CardHeader>
+              <div>
+                <CardTitle>Documents</CardTitle>
+                <CardDescription>
+                  Attach documents by URL. Public documents show on the property detail page.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PropertyDocuments propertyId={id} documents={documents} />
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
     </main>
   );
