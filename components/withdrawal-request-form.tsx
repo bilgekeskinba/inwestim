@@ -68,7 +68,7 @@ export function WithdrawalRequestForm({
     }
 
     setIsSubmitting(false);
-    setSuccess("Withdrawal request submitted. An admin will review it shortly.");
+    setSuccess("Withdrawal submitted. An admin will review it shortly.");
     setAmount("");
     setWalletAddress("");
     router.refresh();
@@ -155,7 +155,7 @@ export function WithdrawalRequestForm({
       {success ? <p className="text-sm font-medium text-emerald-400">{success}</p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting…" : "Create Withdrawal Request"}
+        {isSubmitting ? "Submitting…" : "Withdraw USDC"}
       </Button>
     </form>
   );

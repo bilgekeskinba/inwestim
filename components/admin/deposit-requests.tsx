@@ -145,8 +145,8 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
   if (deposits.length === 0) {
     return (
       <EmptyState
-        title="No pending deposits."
-        description="New deposit requests will appear here for review."
+        title="No incoming deposits."
+        description="New deposits will appear here for review."
       />
     );
   }
@@ -216,7 +216,7 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
                   onClick={() => verify(deposit)}
                   disabled={busyId === deposit.id}
                 >
-                  Verify Tx
+                  Verify Transaction
                 </Button>
               ) : null}
               <Button
@@ -246,7 +246,7 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
 
           {deposit.isDuplicate ? (
             <p className="text-xs font-medium text-rose-300">
-              Duplicate tx hash — this transaction is used by more than one deposit request.
+              Duplicate tx hash — this transaction is used by more than one deposit.
             </p>
           ) : null}
 

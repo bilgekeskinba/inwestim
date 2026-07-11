@@ -69,17 +69,17 @@ export function WithdrawalTimeline({
   const isCancelled = status === WITHDRAWAL_STATUS.CANCELLED;
   const isEnded = isFailed || isCancelled;
 
-  const terminalLabel = isFailed ? "Failed" : isCancelled ? "Cancelled" : "Completed";
+  const terminalLabel = isFailed ? "Failed" : isCancelled ? "Cancelled" : "Funds delivered";
 
   const steps: { label: string; state: StepState }[] = [
-    { label: "Request submitted", state: "complete" },
+    { label: "Withdrawal submitted", state: "complete" },
     {
-      label: "Admin approved",
+      label: "Compliance approval",
       // Reached for approved/completed/cancelled; rejected (failed) never got here.
       state: isFailed ? "failed" : isApproved || isCompleted || isCancelled ? "complete" : "pending",
     },
     {
-      label: "Payout processing",
+      label: "Blockchain payout",
       state: isCompleted ? "complete" : isEnded ? "failed" : "pending",
     },
     {
@@ -91,21 +91,21 @@ export function WithdrawalTimeline({
 
   const helper = isCompleted
     ? {
-        text: "Withdrawal completed and your wallet has been debited.",
+        text: "Funds sent successfully and your wallet has been debited.",
         className: "text-emerald-300",
       }
     : isEnded
       ? {
-          text: "This withdrawal request failed or was cancelled.",
+          text: "This withdrawal failed or was cancelled.",
           className: "text-rose-300",
         }
       : isApproved
         ? {
-            text: "Approved — waiting for payout completion.",
+            text: "Awaiting blockchain payout.",
             className: "text-slate-400",
           }
         : {
-            text: "Your withdrawal request is waiting for admin review.",
+            text: "Your withdrawal is awaiting approval.",
             className: "text-slate-400",
           };
 

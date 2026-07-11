@@ -142,8 +142,8 @@ export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdraw
   if (withdrawals.length === 0) {
     return (
       <EmptyState
-        title="No pending withdrawals."
-        description="New withdrawal requests will appear here for review."
+        title="No outgoing withdrawals."
+        description="New withdrawals will appear here for review."
       />
     );
   }
@@ -222,7 +222,7 @@ export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdraw
                     disabled={busy}
                     className="bg-emerald-500 text-white hover:bg-emerald-400"
                   >
-                    Mark as Completed
+                    Complete Payout
                   </Button>
                   <Button
                     type="button"

@@ -68,10 +68,10 @@ export function DepositTimeline({
   const isFailed = status === DEPOSIT_STATUS.FAILED || status === DEPOSIT_STATUS.CANCELLED;
 
   const steps: { label: string; state: StepState }[] = [
-    { label: "Request submitted", state: "complete" },
-    { label: "Tx hash provided", state: txHash ? "complete" : "pending" },
+    { label: "Blockchain transfer submitted", state: "complete" },
+    { label: "Transaction broadcast", state: txHash ? "complete" : "pending" },
     {
-      label: "On-chain verification",
+      label: "Blockchain verification",
       state:
         verificationStatus === "verified"
           ? "complete"
@@ -80,7 +80,7 @@ export function DepositTimeline({
             : "pending",
     },
     {
-      label: "Admin approval",
+      label: "Compliance approval",
       state: isCompleted ? "complete" : isFailed ? "failed" : "pending",
     },
     { label: "Wallet credited", state: isCompleted ? "complete" : "pending" },
@@ -88,16 +88,16 @@ export function DepositTimeline({
 
   const helper = isCompleted
     ? {
-        text: "Your deposit has been credited to your Inwestim wallet.",
+        text: "Funds credited to your Inwestim Wallet.",
         className: "text-emerald-300",
       }
     : isFailed
       ? {
-          text: "This deposit request was rejected or failed verification.",
+          text: "This deposit was rejected or failed blockchain verification.",
           className: "text-rose-300",
         }
       : {
-          text: "Your deposit request is waiting for verification or admin approval.",
+          text: "Blockchain transfer is being verified before compliance approval.",
           className: "text-slate-400",
         };
 

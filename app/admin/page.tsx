@@ -179,8 +179,8 @@ export default async function AdminPage() {
 
         <AppSectionCard className="mt-10">
           <AppSectionHeader
-            title="Pending deposits"
-            description="Deposit requests awaiting confirmation."
+            title="Incoming Deposits"
+            description="Incoming deposits awaiting confirmation."
           />
           <CardContent>
             <DepositRequests deposits={pendingDeposits} />
@@ -189,8 +189,8 @@ export default async function AdminPage() {
 
         <AppSectionCard className="mt-10">
           <AppSectionHeader
-            title="Pending withdrawals"
-            description="Withdrawal requests awaiting review and payout."
+            title="Outgoing Withdrawals"
+            description="Outgoing withdrawals awaiting review and payout."
           />
           <CardContent>
             <WithdrawalRequests withdrawals={pendingWithdrawals} />

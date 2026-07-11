@@ -64,7 +64,7 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
       {/* Deposit metrics (database only) */}
       <p className="text-sm font-medium text-slate-300">Deposits</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Stat label="Pending deposits" value={String(overview.pendingCount)} />
+        <Stat label="Incoming deposits" value={String(overview.pendingCount)} />
         <Stat label="Verified, not approved" value={String(overview.verifiedNotApprovedCount)} />
         <Stat label="Failed deposits" value={String(overview.failedCount)} />
         <Stat label="Completed deposits" value={formatUSDC(overview.completedTotal)} />
@@ -128,7 +128,7 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
 
       {/* Recent deposit requests */}
       <div>
-        <p className="mb-3 text-sm font-medium text-slate-300">Recent deposit requests</p>
+        <p className="mb-3 text-sm font-medium text-slate-300">Recent deposits</p>
         {overview.recentDeposits.length > 0 ? (
           <div className="flex flex-col gap-3">
             {overview.recentDeposits.map((deposit) => (
@@ -168,7 +168,7 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
           </div>
         ) : (
           <div className="flex min-h-[120px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-8 text-center">
-            <p className="text-sm text-slate-400">No deposit requests yet.</p>
+            <p className="text-sm text-slate-400">No deposits yet.</p>
           </div>
         )}
       </div>
@@ -176,7 +176,7 @@ export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) 
       {/* Withdrawal metrics */}
       <p className="pt-2 text-sm font-medium text-slate-300">Withdrawals</p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Stat label="Pending withdrawals" value={String(overview.withdrawalPendingCount)} />
+        <Stat label="Outgoing withdrawals" value={String(overview.withdrawalPendingCount)} />
         <Stat label="Approved withdrawals" value={String(overview.withdrawalApprovedCount)} />
         <Stat label="Failed / cancelled" value={String(overview.withdrawalFailedCancelledCount)} />
         <Stat label="Completed withdrawals" value={formatUSDC(overview.completedWithdrawalTotal)} />

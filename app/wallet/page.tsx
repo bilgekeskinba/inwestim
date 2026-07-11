@@ -170,8 +170,8 @@ export default async function WalletPage() {
           {/* Deposits */}
           <AppSectionCard className="mb-8">
             <AppSectionHeader
-              title="Deposits"
-              description="Request a deposit; an admin confirms it before it credits your balance."
+              title="Deposit USDC"
+              description="Deposit USDC; an admin confirms it before it credits your balance."
             />
             <CardContent>
               {walletConnectEnabled ? (
@@ -183,7 +183,7 @@ export default async function WalletPage() {
               )}
 
               <div className="mt-8">
-                <p className="mb-3 text-sm font-medium text-slate-300">Your deposit requests</p>
+                <p className="mb-3 text-sm font-medium text-slate-300">Deposit History</p>
                 {deposits.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {deposits.map((deposit) => (
@@ -203,7 +203,7 @@ export default async function WalletPage() {
                   </div>
                 ) : (
                   <div className="flex min-h-[120px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-8 text-center">
-                    <p className="text-sm text-slate-400">No deposit requests yet.</p>
+                    <p className="text-sm text-slate-400">No deposits yet.</p>
                   </div>
                 )}
               </div>
@@ -213,14 +213,14 @@ export default async function WalletPage() {
           {/* Withdrawals */}
           <AppSectionCard className="mb-8">
             <AppSectionHeader
-              title="Withdrawals"
-              description="Request a withdrawal; an admin reviews and pays it out before it debits your balance."
+              title="Withdraw USDC"
+              description="Withdraw USDC; an admin reviews and pays it out before it debits your balance."
             />
             <CardContent>
               <WithdrawalRequestForm userId={user.id} availableBalance={availableBalance} />
 
               <div className="mt-8">
-                <p className="mb-3 text-sm font-medium text-slate-300">Your withdrawal requests</p>
+                <p className="mb-3 text-sm font-medium text-slate-300">Withdrawal History</p>
                 {withdrawals.length > 0 ? (
                   <div className="flex flex-col gap-3">
                     {withdrawals.map((withdrawal) => (
@@ -237,7 +237,7 @@ export default async function WalletPage() {
                   </div>
                 ) : (
                   <div className="flex min-h-[120px] flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 bg-slate-950/60 p-8 text-center">
-                    <p className="text-sm text-slate-400">No withdrawal requests yet.</p>
+                    <p className="text-sm text-slate-400">No withdrawals yet.</p>
                   </div>
                 )}
               </div>

@@ -57,7 +57,7 @@ export function DepositRequestForm({ userId }: { userId: string }) {
     }
 
     setIsSubmitting(false);
-    setSuccess("Deposit request submitted. An admin will review it shortly.");
+    setSuccess("Deposit submitted. An admin will review it shortly.");
     setAmount("");
     setWalletAddress("");
     router.refresh();
@@ -137,7 +137,7 @@ export function DepositRequestForm({ userId }: { userId: string }) {
       {success ? <p className="text-sm font-medium text-emerald-400">{success}</p> : null}
 
       <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting…" : "Create Deposit Request"}
+        {isSubmitting ? "Submitting…" : "Deposit USDC"}
       </Button>
     </form>
   );
