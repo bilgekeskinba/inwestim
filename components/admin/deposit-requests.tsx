@@ -11,9 +11,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { DEPOSIT_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
 import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
-import { verifyDepositTransaction } from "@/lib/web3/verify-deposit";
 import { explorerTxUrl } from "@/lib/web3/networks";
-import { TREASURY_ADDRESS, REQUIRE_DEPOSIT_VERIFICATION } from "@/lib/env";
+import { REQUIRE_DEPOSIT_VERIFICATION } from "@/lib/env";
 
 function shortenHash(hash: string): string {
   return hash.length > 18 ? `${hash.slice(0, 10)}…${hash.slice(-8)}` : hash;
@@ -104,42 +103,32 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
     router.refresh();
   };
 
-  // Read-only on-chain verification. Stores the result but never approves —
-  // the admin still clicks Approve manually.
+  // Manual fallback — delegates to the SAME trusted server endpoint the native
+  // deposit flow uses (Sprint 6G). The admin browser no longer runs the verifier
+  // or writes verification_status directly; the server computes and persists it.
   const verify = async (deposit: AdminDeposit) => {
     if (!deposit.txHash) return;
     setBusyId(deposit.id);
 
-    const result = await verifyDepositTransaction({
-      txHash: deposit.txHash,
-      walletAddress: deposit.walletAddress,
-      amount: deposit.amount,
-      treasury: TREASURY_ADDRESS,
-    });
-
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase
-      .from("deposit_requests")
-      .update({
-        verification_status: result.status,
-        verification_details: result.checks,
-        verified_at: new Date().toISOString(),
-      })
-      .eq("id", deposit.id);
-
-    setBusyId(null);
-
-    if (error) {
+    try {
+      const res = await fetch(`/api/deposits/${deposit.id}/verify`, { method: "POST" });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        if (typeof window !== "undefined") {
+          window.alert(`Could not verify transaction: ${body.error ?? res.status}`);
+        }
+      }
+    } catch (err) {
       if (process.env.NODE_ENV !== "production") {
-        console.error("[admin] verification save failed", error);
+        console.error("[admin] verification request failed", err);
       }
       if (typeof window !== "undefined") {
-        window.alert(`Could not save verification result: ${error.message}`);
+        window.alert("Could not verify the transaction. Please try again.");
       }
-      return;
+    } finally {
+      setBusyId(null);
+      router.refresh();
     }
-
-    router.refresh();
   };
 
   if (deposits.length === 0) {
@@ -208,7 +197,12 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
               ) : null}
             </div>
             <div className="flex flex-shrink-0 flex-wrap items-center gap-3">
-              {deposit.txHash ? (
+              {/* Verification runs automatically when the deposit is created.
+                  Once it has completed (verified/failed) the manual button is
+                  hidden and the outcome is shown. The button reappears only when
+                  the deposit is still not_verified (e.g. an RPC timeout) as a
+                  manual fallback. */}
+              {deposit.txHash && deposit.verificationStatus === "not_verified" ? (
                 <Button
                   type="button"
                   variant="secondary"
@@ -218,6 +212,14 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
                 >
                   Verify Transaction
                 </Button>
+              ) : deposit.verificationStatus === "verified" ? (
+                <span className="text-xs font-medium text-emerald-300">
+                  Verified automatically
+                </span>
+              ) : deposit.verificationStatus === "failed" ? (
+                <span className="text-xs font-medium text-rose-300">
+                  Automatic verification failed
+                </span>
               ) : null}
               <Button
                 type="button"

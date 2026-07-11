@@ -96,10 +96,25 @@ export function DepositTimeline({
           text: "This deposit was rejected or failed blockchain verification.",
           className: "text-rose-300",
         }
-      : {
-          text: "Blockchain transfer is being verified before compliance approval.",
-          className: "text-slate-400",
-        };
+      : verificationStatus === "verified"
+        ? {
+            text: "Verified on-chain — awaiting compliance approval.",
+            className: "text-emerald-300",
+          }
+        : verificationStatus === "failed"
+          ? {
+              text: "Blockchain verification failed. An admin will review this deposit.",
+              className: "text-rose-300",
+            }
+          : txHash
+            ? {
+                text: "Waiting for blockchain confirmations.",
+                className: "text-slate-400",
+              }
+            : {
+                text: "Blockchain transfer is being verified before compliance approval.",
+                className: "text-slate-400",
+              };
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-slate-950/60 p-5">

@@ -45,6 +45,37 @@ function isUserRejection(err: unknown): boolean {
 }
 
 /**
+ * Trigger trusted server-side verification (Sprint 6G) for a just-created
+ * deposit. The browser sends ONLY the deposit id; the server loads the expected
+ * values, runs the verifier with server-only RPC/treasury config, and persists
+ * the result. The browser no longer computes or writes verification status.
+ *
+ * Best-effort: any failure (network, server error) resolves to "not_verified"
+ * so the deposit is left in a safe state and an admin can verify manually.
+ */
+async function requestServerVerification(
+  depositId: string
+): Promise<{ status: "verified" | "failed" | "not_verified"; awaitingConfirmations: boolean }> {
+  try {
+    const res = await fetch(`/api/deposits/${depositId}/verify`, { method: "POST" });
+    if (!res.ok) return { status: "not_verified", awaitingConfirmations: false };
+    const body = (await res.json()) as {
+      status?: "verified" | "failed" | "not_verified";
+      awaitingConfirmations?: boolean;
+    };
+    return {
+      status: body.status ?? "not_verified",
+      awaitingConfirmations: Boolean(body.awaitingConfirmations),
+    };
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[deposit] server verification request failed", err);
+    }
+    return { status: "not_verified", awaitingConfirmations: false };
+  }
+}
+
+/**
  * Native wallet deposit (Sprint 6D). The user enters an amount and clicks
  * Deposit; WalletConnect opens their wallet to sign an official Polygon USDC
  * ERC-20 `transfer()` to the treasury. The tx hash is captured automatically —
@@ -161,33 +192,53 @@ export function BlockchainDepositForm({ userId }: { userId: string }) {
       return;
     }
 
-    // 3. Success → automatically create the pending deposit request (task 8).
+    // 3. Success → automatically create the pending deposit.
     const supabase = getSupabaseBrowserClient();
-    const { error: insertError } = await supabase.from("deposit_requests").insert({
-      user_id: userId,
-      wallet_address: address,
-      chain: ACTIVE_NETWORK.key,
-      asset: USDC,
-      amount: amountNum,
-      tx_hash: hash,
-      status: DEPOSIT_STATUS.PENDING,
-    });
+    const { data: created, error: insertError } = await supabase
+      .from("deposit_requests")
+      .insert({
+        user_id: userId,
+        wallet_address: address,
+        chain: ACTIVE_NETWORK.key,
+        asset: USDC,
+        amount: amountNum,
+        tx_hash: hash,
+        status: DEPOSIT_STATUS.PENDING,
+      })
+      .select("id")
+      .single();
 
-    setIsSubmitting(false);
-    setStatus("");
-
-    if (insertError) {
+    if (insertError || !created) {
       // The transfer already succeeded on-chain; only the record failed.
+      setIsSubmitting(false);
+      setStatus("");
       setError(
-        insertError.code === "23505"
+        insertError?.code === "23505"
           ? "This transfer has already been recorded as a deposit."
           : `Transfer confirmed (${shorten(hash)}) but the deposit could not be saved: ` +
-              `${insertError.message}. Contact support with this hash.`
+              `${insertError?.message ?? "unknown error"}. Contact support with this hash.`
       );
       return;
     }
 
-    setSuccess("Deposit submitted. An admin will confirm it shortly.");
+    // 4. Trusted server-side verification (Sprint 6G). The browser only passes
+    // the deposit id; the server verifies and persists the result. Best-effort —
+    // a failure here leaves the deposit not_verified for manual admin review.
+    setStatus("Verifying the transfer on-chain…");
+    const { status: verification, awaitingConfirmations } =
+      await requestServerVerification(String(created.id));
+
+    setIsSubmitting(false);
+    setStatus("");
+    setSuccess(
+      verification === "verified"
+        ? "Deposit submitted and verified on-chain. An admin will confirm it shortly."
+        : verification === "failed"
+          ? "Deposit submitted, but on-chain verification failed. An admin will review it."
+          : awaitingConfirmations
+            ? "Deposit submitted. Awaiting on-chain confirmations — an admin will confirm it shortly."
+            : "Deposit submitted. An admin will verify and confirm it shortly."
+    );
     setAmount("");
     router.refresh();
   };

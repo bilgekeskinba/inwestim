@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { isAwaitingConfirmationsRow } from "@/lib/web3/verification-status";
+import type { VerificationCheck } from "@/lib/web3/verify-deposit";
 import type { AdminProperty, PropertyDocument } from "@/types/property";
 import type { AdminInvestment } from "@/types/investment";
 import type { AdminDistributionCycle } from "@/types/distribution";
@@ -633,6 +635,76 @@ export async function getTreasuryOverview(
   } catch (error) {
     adminDevError("treasury overview error", error);
     return EMPTY_TREASURY_OVERVIEW;
+  }
+}
+
+export type DepositVerificationMonitor = {
+  /** Pending/confirming deposits with a tx hash still awaiting verification. */
+  notVerifiedCount: number;
+  /** Subset whose stored checks show they are waiting on confirmations. */
+  awaitingConfirmationsCount: number;
+  /** Deposits whose verification came back a substantive failure. */
+  failedCount: number;
+  /** Oldest created_at among not-verified pending deposits (for staleness). */
+  oldestPendingAt: string | null;
+};
+
+const EMPTY_VERIFICATION_MONITOR: DepositVerificationMonitor = {
+  notVerifiedCount: 0,
+  awaitingConfirmationsCount: 0,
+  failedCount: 0,
+  oldestPendingAt: null,
+};
+
+/**
+ * Verification-monitoring metrics for the treasury dashboard (Sprint 6H).
+ * Database-only; does NOT query the blockchain. Soft-fails to zeroed metrics.
+ */
+export async function getDepositVerificationMonitor(
+  supabase: SupabaseServerClient
+): Promise<DepositVerificationMonitor> {
+  try {
+    const { data, error } = await supabase
+      .from("deposit_requests")
+      .select("id, status, verification_status, verification_details, tx_hash, created_at");
+
+    if (error || !data) {
+      adminDevError("verification monitor query failed", error);
+      return EMPTY_VERIFICATION_MONITOR;
+    }
+
+    let notVerifiedCount = 0;
+    let awaitingConfirmationsCount = 0;
+    let failedCount = 0;
+    let oldestPendingAt: string | null = null;
+
+    for (const row of data) {
+      const vStatus = String(row.verification_status ?? "not_verified");
+      const dStatus = String(row.status ?? "");
+      const hasTx = Boolean(row.tx_hash);
+      const details = (row.verification_details as VerificationCheck[] | null) ?? null;
+
+      if (vStatus === "failed") failedCount += 1;
+
+      const isPendingLike = dStatus === "pending" || dStatus === "confirming";
+      if (vStatus === "not_verified" && hasTx && isPendingLike) {
+        notVerifiedCount += 1;
+
+        if (isAwaitingConfirmationsRow({ verification_status: vStatus, verification_details: details })) {
+          awaitingConfirmationsCount += 1;
+        }
+
+        const created = (row.created_at as string | null) ?? null;
+        if (created && (!oldestPendingAt || new Date(created) < new Date(oldestPendingAt))) {
+          oldestPendingAt = created;
+        }
+      }
+    }
+
+    return { notVerifiedCount, awaitingConfirmationsCount, failedCount, oldestPendingAt };
+  } catch (error) {
+    adminDevError("verification monitor error", error);
+    return EMPTY_VERIFICATION_MONITOR;
   }
 }
 

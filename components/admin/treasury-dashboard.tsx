@@ -7,7 +7,8 @@ import {
   explorerTxUrl,
 } from "@/lib/web3/networks";
 import { TREASURY_ADDRESS } from "@/lib/env";
-import type { TreasuryOverview } from "@/lib/admin";
+import type { TreasuryOverview, DepositVerificationMonitor } from "@/lib/admin";
+import { RecheckPendingButton } from "@/components/admin/recheck-pending-button";
 
 function shorten(value: string): string {
   return value.length > 14 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
@@ -28,11 +29,40 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function TreasuryDashboard({ overview }: { overview: TreasuryOverview }) {
+export function TreasuryDashboard({
+  overview,
+  monitor,
+}: {
+  overview: TreasuryOverview;
+  monitor: DepositVerificationMonitor;
+}) {
   const treasury = TREASURY_ADDRESS ?? null;
 
   return (
     <div className="space-y-6">
+      {/* Verification monitoring (Sprint 6H) */}
+      <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-200">Deposit verification</p>
+            <p className="text-xs text-slate-500">
+              Deposits verify automatically after each transfer. Recheck settles any
+              still waiting on blockchain confirmations. Approval stays manual.
+            </p>
+          </div>
+          <RecheckPendingButton />
+        </div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat label="Not verified" value={String(monitor.notVerifiedCount)} />
+          <Stat label="Awaiting confirmations" value={String(monitor.awaitingConfirmationsCount)} />
+          <Stat label="Failed verification" value={String(monitor.failedCount)} />
+          <Stat
+            label="Oldest pending"
+            value={monitor.oldestPendingAt ? formatDate(monitor.oldestPendingAt) : "—"}
+          />
+        </div>
+      </div>
+
       {/* Treasury identity */}
       <div className="flex flex-col gap-3 rounded-3xl border border-white/10 bg-slate-950/60 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>

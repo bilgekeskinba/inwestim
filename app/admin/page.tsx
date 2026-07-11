@@ -13,6 +13,7 @@ import {
   getDistributionCycles,
   getLegacyApprovedCount,
   getTreasuryOverview,
+  getDepositVerificationMonitor,
   type AdminProperty,
 } from "@/lib/admin";
 import { formatUSDC } from "@/lib/format/currency";
@@ -105,6 +106,7 @@ export default async function AdminPage() {
   const pendingDeposits = await getPendingDeposits(supabase);
   const pendingWithdrawals = await getPendingWithdrawals(supabase);
   const treasuryOverview = await getTreasuryOverview(supabase);
+  const verificationMonitor = await getDepositVerificationMonitor(supabase);
   const distributionCycles = await getDistributionCycles(supabase);
   const legacyApprovedCount = await getLegacyApprovedCount(supabase);
 
@@ -203,7 +205,7 @@ export default async function AdminPage() {
             description="Operational overview of deposit activity (database only)."
           />
           <CardContent>
-            <TreasuryDashboard overview={treasuryOverview} />
+            <TreasuryDashboard overview={treasuryOverview} monitor={verificationMonitor} />
           </CardContent>
         </AppSectionCard>
 
