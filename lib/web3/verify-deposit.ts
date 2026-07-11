@@ -95,7 +95,9 @@ export async function verifyDepositTransaction(params: {
   try {
     const head = await client.getBlockNumber();
     const confirmations =
-      head >= receipt.blockNumber ? head - receipt.blockNumber + 1n : 0n;
+      head >= receipt.blockNumber
+        ? head - receipt.blockNumber + BigInt(1)
+        : BigInt(0);
     checks.push({
       label: "Minimum confirmations reached",
       passed: confirmations >= BigInt(minConfirmations),
@@ -115,16 +117,19 @@ export async function verifyDepositTransaction(params: {
     detail: `chainId ${network.chainId}`,
   });
 
-  let transfers: ReturnType<typeof parseEventLogs> = [];
-  try {
-    transfers = parseEventLogs({
-      abi: erc20Abi,
-      eventName: "Transfer",
-      logs: receipt.logs,
-    });
-  } catch {
-    transfers = [];
-  }
+  // Decode the ERC-20 Transfer logs. Inference (not an erasing annotation) keeps
+  // each log's `args` ({ from, to, value }) typed; a decode failure yields [].
+  const transfers = (() => {
+    try {
+      return parseEventLogs({
+        abi: erc20Abi,
+        eventName: "Transfer",
+        logs: receipt.logs,
+      });
+    } catch {
+      return [];
+    }
+  })();
 
   const usdc = getAddress(token.address);
   const usdcTransfers = transfers.filter((log) => {
@@ -147,20 +152,18 @@ export async function verifyDepositTransaction(params: {
   const expected = parseUnits(String(params.amount), token.decimals);
 
   const fromMatch = usdcTransfers.some(
-    (log) => wallet && normalize((log.args as { from?: string }).from) === wallet
+    (log) => wallet !== null && normalize(log.args.from) === wallet
   );
   const toMatch = usdcTransfers.some(
-    (log) => normalize((log.args as { to?: string }).to) === treasury
+    (log) => normalize(log.args.to) === treasury
   );
-  const amountMatch = usdcTransfers.some((log) => {
-    const args = log.args as { from?: string; to?: string; value?: bigint };
-    return (
-      wallet &&
-      normalize(args.from) === wallet &&
-      normalize(args.to) === treasury &&
-      args.value === expected
-    );
-  });
+  const amountMatch = usdcTransfers.some(
+    (log) =>
+      wallet !== null &&
+      normalize(log.args.from) === wallet &&
+      normalize(log.args.to) === treasury &&
+      log.args.value === expected
+  );
 
   checks.push({
     label: "Sender matches wallet address",

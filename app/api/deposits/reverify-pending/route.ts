@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { verifyAndPersistDeposit } from "@/lib/deposits/verify-and-persist";
 import { isRetryableDeposit } from "@/lib/web3/verification-status";
+import type { VerificationCheck } from "@/lib/web3/verify-deposit";
 
 /**
  * POST /api/deposits/reverify-pending — trusted batch re-verification (Sprint 6H).
@@ -79,7 +80,8 @@ export async function POST(request: Request) {
       verification_status: row.verification_status as string | null,
       tx_hash: row.tx_hash as string | null,
       status: row.status as string | null,
-      verification_details: (row.verification_details as never) ?? null,
+      verification_details:
+        (row.verification_details as VerificationCheck[] | null) ?? null,
     })
   );
 
@@ -100,10 +102,12 @@ export async function POST(request: Request) {
       if (outcome.status === "verified") summary.verified += 1;
       else if (outcome.status === "failed") summary.failed += 1;
       else summary.stillWaiting += 1;
-    } catch (err) {
+    } catch {
+      // Count and log only the deposit id + category. Never log the raw error:
+      // an RPC/transport error can embed the (private) RPC URL.
       summary.errors += 1;
       if (process.env.NODE_ENV !== "production") {
-        console.error("[reverify] deposit failed", row.id, err);
+        console.error(`[reverify] verification error (deposit=${row.id})`);
       }
     }
   }

@@ -18,7 +18,7 @@ export function DepositRequestForm({ userId }: { userId: string }) {
   const router = useRouter();
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
-  const [chain, setChain] = useState(CHAINS[0].value);
+  const [chain, setChain] = useState<string>(CHAINS[0].value);
   const [asset, setAsset] = useState(ASSETS[0]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

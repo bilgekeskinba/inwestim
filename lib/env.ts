@@ -13,10 +13,12 @@ export const REOWN_PROJECT_ID = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
 export const WALLETCONNECT_ENABLED =
   process.env.NEXT_PUBLIC_ENABLE_WALLETCONNECT === "true";
 
-// Active EVM network (slug from the network registry) + per-chain RPC URLs.
+// Active EVM network (slug from the network registry).
 // The rest of the app derives everything else from lib/web3/networks.
+// NOTE: the Polygon RPC URL is intentionally NOT here — it is server-only
+// (process.env.POLYGON_RPC_URL, read in lib/web3/networks) and must never be
+// NEXT_PUBLIC, since only the trusted server verification path needs it.
 export const ACTIVE_CHAIN = process.env.NEXT_PUBLIC_ACTIVE_CHAIN || "polygon";
-export const POLYGON_RPC_URL = process.env.NEXT_PUBLIC_POLYGON_RPC_URL;
 
 // Treasury address deposits must be sent to (chain-agnostic for now).
 export const TREASURY_ADDRESS = process.env.NEXT_PUBLIC_TREASURY_ADDRESS;

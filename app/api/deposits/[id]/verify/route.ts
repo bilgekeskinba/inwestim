@@ -21,11 +21,18 @@ import { verifyAndPersistDeposit } from "@/lib/deposits/verify-and-persist";
  *   so a user can never mark their own deposit "verified".
  * - Approval and the wallet ledger are untouched.
  */
+// Accepts UUID or numeric ids; rejects anything malformed early with a 400.
+const DEPOSIT_ID_RE = /^[A-Za-z0-9-]{1,64}$/;
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  if (!id || !DEPOSIT_ID_RE.test(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
 
   const supabase = await createSupabaseServerClient();
   const {

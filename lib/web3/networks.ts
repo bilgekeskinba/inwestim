@@ -6,7 +6,7 @@
 // registry entry + its RPC env var — no business-layer changes required.
 import type { Chain } from "viem";
 import { polygon } from "viem/chains";
-import { ACTIVE_CHAIN, POLYGON_RPC_URL } from "@/lib/env";
+import { ACTIVE_CHAIN } from "@/lib/env";
 
 export type TokenConfig = {
   symbol: string;
@@ -34,7 +34,10 @@ const POLYGON: NetworkConfig = {
   chainId: polygon.id, // 137
   name: "Polygon",
   chain: polygon,
-  rpcUrl: POLYGON_RPC_URL || undefined,
+  // Server-only private RPC (never NEXT_PUBLIC). Resolves to `undefined` in the
+  // client bundle, where the wallet provider uses its own default RPC and this
+  // value is unused; only the trusted server verifier reads it.
+  rpcUrl: process.env.POLYGON_RPC_URL || undefined,
   explorerUrl: "https://polygonscan.com",
   tokens: {
     // Official Circle-issued USDC on Polygon Mainnet (native, 6 decimals).

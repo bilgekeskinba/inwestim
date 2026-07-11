@@ -75,8 +75,10 @@ export async function verifyAndPersistDeposit(
       .in("status", ["pending", "confirming"])
       .select("id");
     if (error) {
+      // Log only safe operational info: deposit id + error code. Never the raw
+      // error (may carry connection details) or any secret/config value.
       if (process.env.NODE_ENV !== "production") {
-        console.error("[verify] persist failed", error);
+        console.error(`[verify] persist failed (deposit=${deposit.id}, code=${error.code ?? "db_error"})`);
       }
     } else {
       persisted = (data?.length ?? 0) > 0;
