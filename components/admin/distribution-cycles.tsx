@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { DISTRIBUTION_STATUS, CYCLE_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
 import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
+import { emitNotification } from "@/lib/notifications-client";
 
 export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[] }) {
   const router = useRouter();
@@ -118,6 +119,10 @@ export function DistributionCycles({ cycles }: { cycles: AdminDistributionCycle[
     // idempotent (skips distributions that already have a wallet transaction),
     // so it won't block the payment confirmation if it fails.
     await createDistributionCredits(supabase, cycleId);
+
+    // Best-effort in-app notifications: the server fans out one notification per
+    // paid payout in this cycle (idempotent, keyed per rental_distribution).
+    await emitNotification("distribution_paid", cycleId);
 
     setBusyId(null);
     router.refresh();

@@ -13,6 +13,7 @@ import { DEPOSIT_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
 import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
 import { explorerTxUrl } from "@/lib/web3/networks";
 import { REQUIRE_DEPOSIT_VERIFICATION } from "@/lib/env";
+import { emitNotification } from "@/lib/notifications-client";
 
 function shortenHash(hash: string): string {
   return hash.length > 18 ? `${hash.slice(0, 10)}…${hash.slice(-8)}` : hash;
@@ -97,6 +98,8 @@ export function DepositRequests({ deposits }: { deposits: AdminDeposit[] }) {
     // Only approvals credit the ledger; rejections create nothing.
     if (approve) {
       await createDepositCredit(supabase, deposit);
+      // Best-effort in-app notification once the deposit is credited.
+      await emitNotification("deposit_credited", deposit.id);
     }
 
     setBusyId(null);

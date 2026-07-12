@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { NOTIFICATIONS_CHANGED_EVENT } from "@/lib/notifications-client";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -14,6 +17,43 @@ const NAV_LINKS = [
 ];
 
 /**
+ * Tracks the current user's unread notification count for the nav badge. RLS
+ * scopes the count to their own rows, so no user id is needed. Refreshes on
+ * navigation (pathname change) and on the in-app `notifications:changed` event
+ * (fired after the user marks notifications read). Soft-fails to 0.
+ */
+function useUnreadNotifications(pathname: string): number {
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { count } = await supabase
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("is_read", false);
+        if (active) setUnread(count ?? 0);
+      } catch {
+        if (active) setUnread(0);
+      }
+    };
+
+    void load();
+    const onChange = () => void load();
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChange);
+    return () => {
+      active = false;
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChange);
+    };
+  }, [pathname]);
+
+  return unread;
+}
+
+/**
  * Shared shell for authenticated app pages (dashboard, wallet, profile,
  * notifications, settings, position detail). Renders a sticky top nav — logo,
  * links, logout — then the page content. It intentionally does NOT wrap the
@@ -21,6 +61,7 @@ const NAV_LINKS = [
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const unread = useUnreadNotifications(pathname);
 
   return (
     <>
@@ -37,17 +78,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {NAV_LINKS.map((link) => {
               const isActive =
                 pathname === link.href || pathname.startsWith(`${link.href}/`);
+              const showBadge = link.href === "/notifications" && unread > 0;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`relative rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-white/10 text-white"
                       : "text-slate-400 hover:bg-white/5 hover:text-white"
                   }`}
                 >
                   {link.label}
+                  {showBadge ? (
+                    <span
+                      aria-label={`${unread} unread notifications`}
+                      className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-semibold leading-none text-white"
+                    >
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}

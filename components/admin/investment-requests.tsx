@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/format/date";
 import { EmptyState } from "@/components/empty-state";
 import { INVESTMENT_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
 import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
+import { emitNotification } from "@/lib/notifications-client";
 
 export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }) {
   const router = useRouter();
@@ -127,6 +128,14 @@ export function InvestmentRequests({ requests }: { requests: AdminInvestment[] }
       );
       await createInvestmentDebit(supabase, request);
     }
+
+    // Best-effort in-app notification (trusted, server-derived; never blocks).
+    await emitNotification(
+      status === INVESTMENT_STATUS.APPROVED
+        ? "investment_approved"
+        : "investment_rejected",
+      id
+    );
 
     setBusyId(null);
     router.refresh();

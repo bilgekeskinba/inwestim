@@ -11,6 +11,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { WITHDRAWAL_STATUS, WALLET_TX_STATUS } from "@/lib/constants/status";
 import { WALLET_TX_TYPE, WALLET_DIRECTION, REFERENCE_TYPE } from "@/lib/constants/wallet";
+import { emitNotification } from "@/lib/notifications-client";
 
 export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdrawal[] }) {
   const router = useRouter();
@@ -103,6 +104,9 @@ export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdraw
 
     await createWithdrawalDebit(supabase, withdrawal);
 
+    // Best-effort in-app notification once the payout is completed.
+    await emitNotification("withdrawal_completed", withdrawal.id);
+
     setBusyId(null);
     router.refresh();
   };
@@ -131,6 +135,13 @@ export function WithdrawalRequests({ withdrawals }: { withdrawals: AdminWithdraw
     // Ledger debit is created ONLY on completion.
     if (next === WITHDRAWAL_STATUS.COMPLETED) {
       await createWithdrawalDebit(supabase, withdrawal);
+    }
+
+    // Best-effort in-app notification for the two integrated transitions.
+    if (next === WITHDRAWAL_STATUS.APPROVED) {
+      await emitNotification("withdrawal_approved", withdrawal.id);
+    } else if (next === WITHDRAWAL_STATUS.COMPLETED) {
+      await emitNotification("withdrawal_completed", withdrawal.id);
     }
 
     setBusyId(null);
